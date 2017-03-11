@@ -41,6 +41,7 @@
 #include "prop/CDlgConfigChildSupport.h"
 #include "prop/CDlgConfig.h"
 #include "dlg/CDialog.h"
+#include "dlg/CDlgOpenFile.h"
 #include "util/shell.h"
 #include "util/module.h"
 #include "sakura_rc.h"
@@ -106,14 +107,14 @@ BOOL CDlgConfigChildSupport::OnBnClicked( int wID )
 		{
 			// 2003.06.23 Moca 相対パスは実行ファイルからのパス
 			// 2007.05.21 ryoji 相対パスは設定ファイルからのパスを優先
-			CDialog::SelectFile(hwndDlg, GetDlgItem(hwndDlg, IDC_EDIT_EXTHELP1), _T("*.hlp;*.chm;*.col"), true, false);
+			CDlgOpenFile::SelectFile(hwndDlg, GetDlgItem(hwndDlg, IDC_EDIT_EXTHELP1), _T("*.hlp;*.chm;*.col"), true, false);
 		}
 		return TRUE;
 	case IDC_BUTTON_OPENEXTHTMLHELP:	/* 外部HTMLヘルプの「参照...」ボタン */
 		{
 			// 2003.06.23 Moca 相対パスは実行ファイルからのパス
 			// 2007.05.21 ryoji 相対パスは設定ファイルからのパスを優先
-			CDialog::SelectFile(hwndDlg, GetDlgItem(hwndDlg, IDC_EDIT_EXTHTMLHELP), _T("*.chm;*.col"), true, false);
+			CDlgOpenFile::SelectFile(hwndDlg, GetDlgItem(hwndDlg, IDC_EDIT_EXTHTMLHELP), _T("*.chm;*.col"), true, false);
 		}
 		return TRUE;
 	// ai 02/05/21 Add S
@@ -139,7 +140,7 @@ BOOL CDlgConfigChildSupport::OnBnClicked( int wID )
 		{
 			// 2003.06.23 Moca 相対パスは実行ファイルからのパス
 			// 2007.05.21 ryoji 相対パスは設定ファイルからのパスを優先
-			CDialog::SelectFile(hwndDlg, GetDlgItem(hwndDlg, IDC_EDIT_MIGEMO_DLL), _T("*.dll"), true, false);
+			CDlgOpenFile::SelectFile(hwndDlg, GetDlgItem(hwndDlg, IDC_EDIT_MIGEMO_DLL), _T("*.dll"), true, false);
 		}
 		return TRUE;
 	case IDC_BUTTON_OPENMDICT:	/* MigemoDict場所指定「参照...」ボタン */

@@ -775,7 +775,7 @@ void CShareData_IO::ShareData_IO_Common( CDataProfile& cProfile, CDataProfile& c
 	ShareData_IO_RECT( cProfHis,  pszSecName, LTEXT("rcDiffDialog"), common.m_sOthers.m_rcDiffDialog );
 	ShareData_IO_RECT( cProfHis,  pszSecName, LTEXT("rcFavoriteDialog"), common.m_sOthers.m_rcFavoriteDialog );
 	ShareData_IO_RECT( cProfHis,  pszSecName, LTEXT("rcTagJumpDialog"), common.m_sOthers.m_rcTagJumpDialog );
-	ShareData_IO_RECT( cProfile,  pszSecName, LTEXT("rcWindowListDialog"), common.m_sOthers.m_rcWindowListDialog );
+	ShareData_IO_RECT( cProfHis,  pszSecName, LTEXT("rcWindowListDialog"), common.m_sOthers.m_rcWindowListDialog );
 	
 	//2002.02.08 aroka,hor
 	cProfHis.IOProfileData( pszSecName, LTEXT("bMarkUpBlankLineEnable")	, common.m_sOutline.m_bMarkUpBlankLineEnable );
@@ -829,6 +829,31 @@ void CShareData_IO::ShareData_IO_Common( CDataProfile& cProfile, CDataProfile& c
 
 
 
+
+/*! プラグイン名or機能番号文字列をEFunctionCodeにする
+
+	@param[in]	pszFuncName		プラグイン名or機能番号文字列
+	@return 機能コード
+*/
+static EFunctionCode GetFunctionStrToFunctionCode(const WCHAR* pszFuncName)
+{
+	EFunctionCode n;
+	if (pszFuncName == NULL) {
+		n = F_DEFAULT;
+	}else if (wcschr(pszFuncName, L'/') != NULL) {
+		// Plugin名
+		n = CPlugin::GetPlugCmdInfoByName(pszFuncName);
+	}else if (WCODE::Is09(pszFuncName[0]) 
+	  && (pszFuncName[1] == L'\0' || WCODE::Is09(pszFuncName[1]))) {
+		n = (EFunctionCode)auto_atol(pszFuncName);
+	}else {
+		n = CSMacroMgr::GetFuncInfoByName(0, pszFuncName, NULL);
+	}
+	if (n == F_INVALID) {
+		n = F_DEFAULT;
+	}
+	return n;
+}
 
 /*!
 	@brief 共有データのToolbarセクションの入出力
@@ -946,20 +971,7 @@ void CShareData_IO::IO_CustMenu( CDataProfile& cProfile, CommonSetting_CustomMen
 			auto_sprintf( szKeyName, LTEXT("nCMIF[%02d][%02d]"), i, j );
 			if (cProfile.IsReadingMode()) {
 				cProfile.IOProfileData(pszSecName, szKeyName, MakeStringBufferW(szFuncName));
-				if (wcschr(szFuncName, L'/') != NULL) {
-					// Plugin名
-					n = CPlugin::GetPlugCmdInfoByName(szFuncName);
-				}
-				else if ( WCODE::Is09(*szFuncName) 
-				  && (szFuncName[1] == L'\0' || WCODE::Is09(szFuncName[1])) ) {
-					n = (EFunctionCode)auto_atol(szFuncName);
-				}
-				else {
-					n = CSMacroMgr::GetFuncInfoByName(0, szFuncName, NULL);
-				}
-				if ( n == F_INVALID ) {
-					n = F_DEFAULT;
-				}
+				n = GetFunctionStrToFunctionCode(szFuncName);
 				menu.m_nCustMenuItemFuncArr[i][j] = n;
 			}
 			else {
@@ -1102,19 +1114,7 @@ void CShareData_IO::IO_KeyBind( CDataProfile& cProfile, CommonSetting_KeyBind& s
 						pn = auto_strchr(p,',');
 						if (pn == NULL)	break;
 						*pn = 0;
-						if (wcschr(p, L'/') != NULL) {
-							// Plugin名
-							n = CPlugin::GetPlugCmdInfoByName( p );
-						}
-						else if (WCODE::Is09(*p) && (p[1] == L'\0' || WCODE::Is09(p[1]))) {
-							n = (EFunctionCode)auto_atol( p);
-						}
-						else {
-							n = CSMacroMgr::GetFuncInfoByName(0, p, NULL);
-						}
-						if( n == F_INVALID ) {
-							n = F_DEFAULT;
-						}
+						n = GetFunctionStrToFunctionCode(p);
 						tmpKeydata.m_nFuncCodeArr[j] = n;
 						p = pn+1;
 					}
@@ -1755,6 +1755,7 @@ void CShareData_IO::ShareData_IO_Type_One( CDataProfile& cProfile, CDataProfile&
 		cProfile.IOProfileData( pszSecName, LTEXT("bUseKeyHelpAllSearch"), types.m_bUseKeyHelpAllSearch );	/* ヒットした次の辞書も検索(&A) */
 		cProfile.IOProfileData( pszSecName, LTEXT("bUseKeyHelpKeyDisp"), types.m_bUseKeyHelpKeyDisp );		/* 1行目にキーワードも表示する(&W) */
 		cProfile.IOProfileData( pszSecName, LTEXT("bUseKeyHelpPrefix"), types.m_bUseKeyHelpPrefix );		/* 選択範囲で前方一致検索(&P) */
+		cProfile.IOProfileData_WrapInt(pszSecName, LTEXT("nKeyHelpRMenuShowType"), types.m_eKeyHelpRMenuShowType);
 		for(j = 0; j < MAX_KEYHELP_FILE; j++){
 			auto_sprintf( szKeyName, LTEXT("KDct[%02d]"), j );
 			/* 読み出し */
@@ -2243,20 +2244,7 @@ void CShareData_IO::IO_MainMenu( CDataProfile& cProfile, std::vector<std::wstrin
 			p = pn;
 			pn = wcschr( p, L',' );
 			if (pn != NULL)		*pn++ = L'\0';
-			if (wcschr(p, L'/') != NULL) {
-				// Plugin名
-				n = CPlugin::GetPlugCmdInfoByName(p);
-			}
-			else if (WCODE::Is09( *p )
-			  && (WCODE::Is09( p[1] ) == L'\0' ||  WCODE::Is09( p[1] ))) {
-				n = (EFunctionCode)auto_atol( p );
-			}
-			else {
-				n = CSMacroMgr::GetFuncInfoByName(0, p, NULL);
-			}
-			if ( n == F_INVALID ) {
-				n = F_DEFAULT;
-			}
+			n = GetFunctionStrToFunctionCode(p);
 			pcMenu->m_nFunc = n;
 			if (pn == NULL) {
 				continue;

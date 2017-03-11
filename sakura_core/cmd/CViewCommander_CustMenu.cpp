@@ -103,7 +103,7 @@ void CViewCommander::Command_CUSTMENU( int nMenuIdx, EFunctionFlags flags )
 		return;
 	}
 	hMenu = ::CreatePopupMenu();
-	int nId = m_pCommanderView->CreatePopUpMenuSub( hMenu, nMenuIdx, NULL );
+	int nId = m_pCommanderView->CreatePopUpMenuSub( hMenu, nMenuIdx, NULL, KEYHELP_RMENU_NONE );
 	int nCmdId = nId;
 	if( F_PLUGCOMMAND_FIRST <= nCmdId ){
 		nCmdId |= flags;

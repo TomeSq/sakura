@@ -66,7 +66,6 @@
 #define IMR_DOCUMENTFEED 0x0007
 #endif
 
-CEditView*	g_m_pcEditView;
 LRESULT CALLBACK EditViewWndProc( HWND, UINT, WPARAM, LPARAM );
 VOID CALLBACK EditViewTimerProc( HWND, UINT, UINT_PTR, DWORD );
 
@@ -88,10 +87,13 @@ LRESULT CALLBACK EditViewWndProc(
 {
 //	DEBUG_TRACE(_T("EditViewWndProc(0x%08X): %ls\n"), hwnd, GetWindowsMessageName(uMsg));
 
-	CEditView*	pCEdit;
+	CREATESTRUCT* pCreate;
+	CEditView* pCEdit;
+
 	switch( uMsg ){
 	case WM_CREATE:
-		pCEdit = ( CEditView* )g_m_pcEditView;
+		pCreate = reinterpret_cast<CREATESTRUCT*>(lParam);
+		pCEdit = reinterpret_cast<CEditView*>(pCreate->lpCreateParams);
 		return pCEdit->DispatchEvent( hwnd, uMsg, wParam, lParam );
 	default:
 		pCEdit = ( CEditView* )::GetWindowLongPtr( hwnd, 0 );
@@ -186,7 +188,6 @@ BOOL CEditView::Create(
 	m_cRegexKeyword = NULL;				// 2007.04.08 ryoji
 
 	SetDrawSwitch(true);
-	m_pcDropTarget = new CDropTarget( this );
 	_SetDragMode(FALSE);					/* 選択テキストのドラッグ中か */
 	m_bCurSrchKeyMark = false;				/* 検索文字列 */
 	//	Jun. 27, 2001 genta
@@ -329,7 +330,6 @@ BOOL CEditView::Create(
 	}
 
 	/* エディタウィンドウの作成 */
-	g_m_pcEditView = this;
 	SetHwnd(
 		::CreateWindowEx(
 			WS_EX_STATICEDGE,		// extended window style
@@ -347,14 +347,17 @@ BOOL CEditView::Create(
 			hwndParent,				// handle to parent or owner window
 			NULL,					// handle to menu or child-window identifier
 			G_AppInstance(),		// handle to application instance
-			(LPVOID)this			// pointer to window-creation data
+			(LPVOID)this			// pointer to window-creation data(lpCreateParams)
 		)
 	);
 	if( NULL == GetHwnd() ){
 		return FALSE;
 	}
 
-	m_pcDropTarget->Register_DropTarget( GetHwnd() );
+	if( !m_bMiniMap ){
+		m_pcDropTarget = new CDropTarget( this );
+		m_pcDropTarget->Register_DropTarget( GetHwnd() );
+	}
 
 	/* 辞書Tip表示ウィンドウ作成 */
 	m_cTipWnd.Create( G_AppInstance(), GetHwnd()/*GetDllShareData().m_sHandles.m_hwndTray*/ );
@@ -813,7 +816,9 @@ LRESULT CEditView::DispatchEvent(
 		::DestroyWindow( hwnd );
 		return 0L;
 	case WM_DESTROY:
-		m_pcDropTarget->Revoke_DropTarget();
+		if( NULL != m_pcDropTarget ){
+			m_pcDropTarget->Revoke_DropTarget();
+		}
 
 		/* タイマー終了 */
 		::KillTimer( GetHwnd(), IDT_ROLLMOUSE );
@@ -1622,8 +1627,6 @@ void CEditView::ConvSelectedArea( EFunctionCode nFuncCode )
 int	CEditView::CreatePopUpMenu_R( void )
 {
 	HMENU		hMenu;
-	POINT		po;
-	RECT		rc;
 	int			nMenuIdx;
 
 	CMenuDrawer& cMenuDrawer = m_pcEditWnd->GetMenuDrawer();
@@ -1637,22 +1640,37 @@ int	CEditView::CreatePopUpMenu_R( void )
 
 	hMenu = ::CreatePopupMenu();
 
+	const STypeConfig& type = GetDocument()->m_cDocType.GetDocumentAttribute();
+	const EKeyHelpRMenuType eRmenuType = type.m_eKeyHelpRMenuShowType;
+
+	return CreatePopUpMenuSub( hMenu, nMenuIdx, NULL, eRmenuType );
+}
+
+void CEditView::AddKeyHelpMenu(HMENU hMenu, EKeyHelpRMenuType eRmenuType)
+{
+	CMenuDrawer& cMenuDrawer = m_pcEditWnd->GetMenuDrawer();
 	// 2010.07.24 Moca オーナードロー対応のために前に移動してCMenuDrawer経由で追加する
-	if( !GetSelectionInfo().IsMouseSelecting() ){
+	if( !GetSelectionInfo().IsMouseSelecting() && eRmenuType != KEYHELP_RMENU_NONE ){
+		POINT po;
+		RECT rc;
 		if( FALSE != KeyWordHelpSearchDict( LID_SKH_POPUPMENU_R, &po, &rc ) ){	// 2006.04.10 fon
+			if( eRmenuType == KEYHELP_RMENU_BOTTOM ){
+				cMenuDrawer.MyAppendMenuSep( hMenu, MF_SEPARATOR, F_0, _T("") );
+			}
 			cMenuDrawer.MyAppendMenu( hMenu, 0, IDM_COPYDICINFO, LS(STR_MENU_KEYWORDINFO), _T("K") );	// 2006.04.10 fon ToolTip内容を直接表示するのをやめた
 			cMenuDrawer.MyAppendMenu( hMenu, 0, IDM_JUMPDICT, LS(STR_MENU_OPENKEYWORDDIC), _T("L") );	// 2006.04.10 fon
-			cMenuDrawer.MyAppendMenuSep( hMenu, MF_SEPARATOR, F_0, _T("") );
+			if( eRmenuType == KEYHELP_RMENU_TOP ){
+				cMenuDrawer.MyAppendMenuSep( hMenu, MF_SEPARATOR, F_0, _T("") );
+			}
 		}
 	}
-	return CreatePopUpMenuSub( hMenu, nMenuIdx, NULL );
 }
 
 /*! ポップアップメニューの作成(Sub)
 	hMenuは作成済み
 	@date 2013.06.15 新規作成 ポップアップメニューとメインメニューの表示方法を統合
 */
-int	CEditView::CreatePopUpMenuSub( HMENU hMenu, int nMenuIdx, int* pParentMenus )
+int	CEditView::CreatePopUpMenuSub( HMENU hMenu, int nMenuIdx, int* pParentMenus, EKeyHelpRMenuType eRmenuType )
 {
 	int			nId;
 	int			i;
@@ -1681,6 +1699,10 @@ int	CEditView::CreatePopUpMenuSub( HMENU hMenu, int nMenuIdx, int* pParentMenus 
 			nThisCode = EFunctionCode(nMenuIdx + F_CUSTMENU_1 - 1);
 		}
 		pNextParam[nParamIndex] = nThisCode;
+	}
+
+	if( eRmenuType == KEYHELP_RMENU_TOP ){
+		AddKeyHelpMenu(hMenu, KEYHELP_RMENU_TOP);
 	}
 
 	for( i = 0; i < GetDllShareData().m_Common.m_sCustomMenu.m_nCustMenuItemNumArr[nMenuIdx]; ++i ){
@@ -1714,7 +1736,7 @@ int	CEditView::CreatePopUpMenuSub( HMENU hMenu, int nMenuIdx, int* pParentMenus 
 				keys[1] = 0;
 				HMENU hMenuPopUp = ::CreatePopupMenu();
 				cMenuDrawer.MyAppendMenu( hMenu, MF_BYPOSITION | MF_STRING | MF_POPUP, (UINT_PTR)hMenuPopUp , p, keys );
-				CreatePopUpMenuSub( hMenuPopUp, nCustIdx, pNextParam );
+				CreatePopUpMenuSub( hMenuPopUp, nCustIdx, pNextParam, KEYHELP_RMENU_NONE );
 				bAppend = true;
 			}else{
 				// ループしているときは、従来同様別で表示
@@ -1733,6 +1755,10 @@ int	CEditView::CreatePopUpMenuSub( HMENU hMenu, int nMenuIdx, int* pParentMenus 
 				m_pcEditWnd->InitMenu_Function( hMenu, code, szLabel, keys );
 			}
 		}
+	}
+
+	if( eRmenuType == KEYHELP_RMENU_BOTTOM ){
+		AddKeyHelpMenu(hMenu, KEYHELP_RMENU_BOTTOM);
 	}
 
 	pNextParam[nParamIndex] = 0;

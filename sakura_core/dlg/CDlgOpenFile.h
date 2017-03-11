@@ -82,6 +82,10 @@ protected:
 
 	friend UINT_PTR CALLBACK OFNHookProc( HWND hdlg, UINT uiMsg, WPARAM wParam, LPARAM lParam );
 
+public:
+	// 設定フォルダ相対ファイル選択(共有データ,ini位置依存)
+	static BOOL SelectFile(HWND parent, HWND hwndCtl, const TCHAR* filter, bool resolvePath, bool bAddTextFilter = true);
+
 private:
 	DISALLOW_COPY_AND_ASSIGN(CDlgOpenFile);
 };

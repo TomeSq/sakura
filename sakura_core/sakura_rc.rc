@@ -32,9 +32,9 @@ LANGUAGE LANG_JAPANESE, SUBLANG_DEFAULT
 #pragma code_page(932)
 #endif //_WIN32
 
-#define	S_COPYRIGHT	"Copyright (C) 1998-2015  by Norio Nakatani & Collaborators"
-#define PR_VER		2,3,0,0
-#define PR_VER_STR	"2.3.0.0"
+#define	S_COPYRIGHT	"Copyright (C) 1998-2016  by Norio Nakatani & Collaborators"
+#define PR_VER		2,3,1,0
+#define PR_VER_STR	"2.3.1.0"
 #define FL_VER		PR_VER
 #define FL_VER_STR	PR_VER_STR
 
@@ -1272,6 +1272,10 @@ BEGIN
     CONTROL         "選択範囲で前方一致検索(&P)",IDC_CHECK_KEYHELP_PREFIX,
                     "Button",BS_AUTOCHECKBOX | BS_NOTIFY | WS_TABSTOP,7,224,
                     108,10
+    LTEXT           "右クリックメニュー(&R)",IDC_STATIC_MENU,120,225,70,8,NOT 
+                    WS_GROUP
+    COMBOBOX        IDC_COMBO_MENU,192,223,60,180,CBS_DROPDOWNLIST | 
+                    WS_VSCROLL | WS_TABSTOP
 END
 
 IDD_PROP_WINDOW DIALOGEX 0, 0, 302, 244
@@ -3852,7 +3856,9 @@ BEGIN
 	STR_DLGFNCLST_REMARK10		"ENDP"
 
 	STR_DLGFNCLST_SORTTYPE1		"デフォルト"
+	STR_DLGFNCLST_SORTTYPE1_2	"デフォルト(降順)"
 	STR_DLGFNCLST_SORTTYPE2		"アルファベット順"
+	STR_DLGFNCLST_SORTTYPE2_2	"アルファベット(降順)"
 
 	// NOT complete....
 	STR_DLGFNCLST_APND_DECLARE		"(宣言)" 
@@ -3895,6 +3901,10 @@ BEGIN
 
 	STR_DLGFNCLST_MENU_UPDATE	"更新(&U)"
 	STR_DLGFNCLST_MENU_COPY		"コピー(&C)"
+	STR_DLGFNCLST_MENU_EXPAND	"すべて展開(&E)"
+	STR_DLGFNCLST_MENU_COLLAPSE	"すべて縮小(&O)"
+	STR_DLGFNCLST_MENU_BOOK_DEL	"ブックマーク削除(&D)"
+	STR_DLGFNCLST_MENU_BOOK_ALL_DEL	"ブックマーク全削除(&A)"
 	STR_DLGFNCLST_MENU_WINPOS	"ウィンドウの位置(&W)"
 	STR_DLGFNCLST_MENU_LEFTDOC	"左ドッキング(&L)"
 	STR_DLGFNCLST_MENU_RIGHTDOC	"右ドッキング(&R)"
@@ -4700,6 +4710,10 @@ BEGIN
 	STR_PROPTYPEREGEX_INVALID		"書式が正しくないか、正規表現ライブラリが見つかりません。\n\n登録しますか？"
 	STR_PROPTYPEREGEX_FULL			"これ以上登録できません。\nキーワード領域がいっぱいです。"
 	STR_PROPTYPEREGEX_NOSEL			"キーワードが選択されていません。"
+
+	STR_KEYHELP_RMENU_NONE			"表示しない"
+	STR_KEYHELP_RMENU_TOP			"先頭に表示"
+	STR_KEYHELP_RMENU_BOTTOM		"末尾に表示"
 
 	// CPropTypesWindow.cpp
 	STR_IME_STATE_DEF				"標準設定"			// ime state

@@ -22,6 +22,7 @@
 #include "StdAfx.h"
 #include "CPropTypes.h"
 #include "dlg/CDialog.h"
+#include "dlg/CDlgOpenFile.h"
 #include "util/module.h"
 #include "util/shell.h"
 #include "util/window.h"
@@ -80,18 +81,23 @@ static const DWORD p_helpids1[] = {	//11300
 
 enum eOutlineNativeNamesId{
 	STR2_OUTLINE_XML = 0,
+	STR2_OUTLINE_C,
+	STR2_OUTLINE_CPP,
 	STR2_OUTLINE_MAX
 };
 
 const TCHAR* pszOutlineNames[] = {
 	_T("XML"),
+	_T("C"),
+	_T("C++"),
 };
 
 
 //アウトライン解析方法・標準ルール
 TYPE_NAME_ID<EOutlineType> OlmArr[] = {
-//	{ OUTLINE_C,		_T("C") },
-	{ OUTLINE_CPP,		STR_OUTLINE_CPP },
+	{ OUTLINE_C_CPP,	STR_OUTLINE_CPP },
+	{ OUTLINE_C,		STR2_OUTLINE_C },
+	{ OUTLINE_CPP,		STR2_OUTLINE_CPP },
 	{ OUTLINE_PLSQL,	STR_OUTLINE_PLSQL },
 	{ OUTLINE_JAVA,		STR_OUTLINE_JAVA },
 	{ OUTLINE_COBOL,	STR_OUTLINE_COBOL },
@@ -244,7 +250,7 @@ INT_PTR CPropTypesScreen::DispatchEvent(
 				{
 					// 2003.06.23 Moca 相対パスは実行ファイルからのパスとして開く
 					// 2007.05.19 ryoji 相対パスは設定ファイルからのパスを優先
-					CDialog::SelectFile(hwndDlg, GetDlgItem(hwndDlg, IDC_EDIT_OUTLINERULEFILE), _T("*.rul;*.rule;*.txt"), true, false);
+					CDlgOpenFile::SelectFile(hwndDlg, GetDlgItem(hwndDlg, IDC_EDIT_OUTLINERULEFILE), _T("*.rul;*.rule;*.txt"), true, false);
 				}
 				return TRUE;
 

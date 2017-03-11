@@ -68,9 +68,6 @@ BOOL CDlgConfigChildKeyword::OnInitDialog( HWND hwndDlg, WPARAM wParam, LPARAM l
 	/* コントロールのハンドルを取得 */
 	HWND hwndCOMBO_SET = ::GetDlgItem( hwndDlg, IDC_COMBO_SET );
 	HWND hwndLIST_KEYWORD = ::GetDlgItem( hwndDlg, IDC_LIST_KEYWORD );
-	if( m_pDlgConfigArg->m_nKeywordSet1 != -1 ){
-		Combo_SetCurSel( hwndCOMBO_SET, m_pDlgConfigArg->m_nKeywordSet1 );
-	}
 
 	RECT		rc;
 	LV_COLUMN	lvc;
@@ -201,7 +198,6 @@ BOOL CDlgConfigChildKeyword::OnBnClicked( int wID )
 	HWND hwndDlg = GetHwnd();
 	HWND hwndCOMBO_SET = ::GetDlgItem( hwndDlg, IDC_COMBO_SET );
 	HWND hwndLIST_KEYWORD = ::GetDlgItem( hwndDlg, IDC_LIST_KEYWORD );
-	int					i;
 	int					nIndex1;
 	wchar_t				szKeyWord[MAX_KEYWORDLEN + 1];
 	CDlgInput1			cDlgInput1;
@@ -241,54 +237,66 @@ BOOL CDlgConfigChildKeyword::OnBnClicked( int wID )
 		if( CB_ERR == nIndex1 ){
 			return TRUE;
 		}
-		/* 削除対象のセットを使用しているファイルタイプを列挙 */
-		static TCHAR		pszLabel[1024];
-		_tcscpy( pszLabel, _T("") );
-		for( i = 0; i < GetDllShareData().m_nTypesCount; ++i ){
-			std::auto_ptr<STypeConfig> type(new STypeConfig());
-			CDocTypeManager().GetTypeConfig( CTypeConfig(i), *type );
-			// 2002/04/25 YAZAKI STypeConfig全体を保持する必要はないし、m_pShareDataを直接見ても問題ない。
-			if( nIndex1 == m_pDlgConfigArg->m_Types_nKeyWordSetIdx[i].index[0]
-			||  nIndex1 == m_pDlgConfigArg->m_Types_nKeyWordSetIdx[i].index[1]
-			||  nIndex1 == m_pDlgConfigArg->m_Types_nKeyWordSetIdx[i].index[2]
-			||  nIndex1 == m_pDlgConfigArg->m_Types_nKeyWordSetIdx[i].index[3]
-			||  nIndex1 == m_pDlgConfigArg->m_Types_nKeyWordSetIdx[i].index[4]
-			||  nIndex1 == m_pDlgConfigArg->m_Types_nKeyWordSetIdx[i].index[5]
-			||  nIndex1 == m_pDlgConfigArg->m_Types_nKeyWordSetIdx[i].index[6]
-			||  nIndex1 == m_pDlgConfigArg->m_Types_nKeyWordSetIdx[i].index[7]
-			||  nIndex1 == m_pDlgConfigArg->m_Types_nKeyWordSetIdx[i].index[8]
-			||  nIndex1 == m_pDlgConfigArg->m_Types_nKeyWordSetIdx[i].index[9] ){
-				_tcscat( pszLabel, _T("・") );
-				_tcscat( pszLabel, type->m_szTypeName );
-				_tcscat( pszLabel, _T("（") );
-				_tcscat( pszLabel, type->m_szTypeExts );
-				_tcscat( pszLabel, _T("）") );
-				_tcscat( pszLabel, _T("\n") );
-			}
-		}
-		if( IDCANCEL == ::MYMESSAGEBOX(	hwndDlg, MB_OKCANCEL | MB_ICONQUESTION, GSTR_APPNAME,
-			LS(STR_PROPCOMKEYWORD_SETDEL),
-			m_Common.m_sSpecialKeyword.m_CKeyWordSetMgr.GetTypeName( nIndex1 ),
-			pszLabel
-		) ){
-			return TRUE;
-		}
-		/* 削除対象のセットを使用しているファイルタイプのセットをクリア */
-		for( i = 0; i < GetDllShareData().m_nTypesCount; ++i ){
-			// 2002/04/25 YAZAKI STypeConfig全体を保持する必要はない。
-			for( int j = 0; j < MAX_KEYWORDSET_PER_TYPE; j++ ){
-				if( nIndex1 == m_pDlgConfigArg->m_Types_nKeyWordSetIdx[i].index[j] ){
-					m_pDlgConfigArg->m_Types_nKeyWordSetIdx[i].index[j] = -1;
-				}
-				else if( nIndex1 < m_pDlgConfigArg->m_Types_nKeyWordSetIdx[i].index[j] ){
-					m_pDlgConfigArg->m_Types_nKeyWordSetIdx[i].index[j]--;
+		{
+			/* 削除対象のセットを使用しているファイルタイプを列挙 */
+			std::tstring strLabel;
+			for( size_t i = 0; i < m_pDlgConfigArg->m_Types_nKeyWordSetIdx.size() ; ++i ){
+				// 2002/04/25 YAZAKI STypeConfig全体を保持する必要はないし、m_pShareDataを直接見ても問題ない。
+				for( int k = 0; k < MAX_KEYWORDSET_PER_TYPE; k++ ){
+					if( nIndex1 == m_pDlgConfigArg->m_Types_nKeyWordSetIdx[i].index[k] ){
+						std::tstring name;
+						std::tstring exts;
+						bool bAdd = false;
+						if( m_pDlgConfigArg->m_Types_nKeyWordSetIdx[i].typeId == -1 ){
+							// タイプ別一時表示
+							name = _T("(Temp)");
+							name += m_pDlgConfigArg->m_tempTypeName;
+							exts = m_pDlgConfigArg->m_tempTypeExts;
+							bAdd = true;
+						}else{
+							const STypeConfigMini* type = NULL;
+							CTypeConfig typeConfig = CDocTypeManager().GetDocumentTypeOfId( m_pDlgConfigArg->m_Types_nKeyWordSetIdx[i].typeId );
+							if( CDocTypeManager().GetTypeConfigMini( typeConfig, &type ) ){
+								name = type->m_szTypeName;
+								exts = type->m_szTypeExts;
+								bAdd = true;
+							}
+						}
+						if( bAdd ){
+							strLabel += _T("・");
+							strLabel += name;
+							strLabel +=  _T("(");
+							strLabel += exts;
+							strLabel += _T(")\n");
+						}
+						break;
+					}
 				}
 			}
+			if( IDCANCEL == ::MYMESSAGEBOX(	hwndDlg, MB_OKCANCEL | MB_ICONQUESTION, GSTR_APPNAME,
+				LS(STR_PROPCOMKEYWORD_SETDEL),
+				m_Common.m_sSpecialKeyword.m_CKeyWordSetMgr.GetTypeName( nIndex1 ),
+				strLabel.c_str()
+			) ){
+				return TRUE;
+			}
+			/* 削除対象のセットを使用しているファイルタイプのセットをクリア */
+			for( size_t i = 0; i < m_pDlgConfigArg->m_Types_nKeyWordSetIdx.size(); ++i ){
+				// 2002/04/25 YAZAKI STypeConfig全体を保持する必要はない。
+				for( int j = 0; j < MAX_KEYWORDSET_PER_TYPE; j++ ){
+					if( nIndex1 == m_pDlgConfigArg->m_Types_nKeyWordSetIdx[i].index[j] ){
+						m_pDlgConfigArg->m_Types_nKeyWordSetIdx[i].index[j] = -1;
+					}
+					else if( nIndex1 < m_pDlgConfigArg->m_Types_nKeyWordSetIdx[i].index[j] ){
+						m_pDlgConfigArg->m_Types_nKeyWordSetIdx[i].index[j]--;
+					}
+				}
+			}
+			/* ｎ番目のセットを削除 */
+			m_Common.m_sSpecialKeyword.m_CKeyWordSetMgr.DelKeyWordSet( m_Common.m_sSpecialKeyword.m_CKeyWordSetMgr.m_nCurrentKeyWordSetIdx );
+			/* ダイアログデータの設定 Keyword */
+			SetData();
 		}
-		/* ｎ番目のセットを削除 */
-		m_Common.m_sSpecialKeyword.m_CKeyWordSetMgr.DelKeyWordSet( m_Common.m_sSpecialKeyword.m_CKeyWordSetMgr.m_nCurrentKeyWordSetIdx );
-		/* ダイアログデータの設定 Keyword */
-		SetData();
 		return TRUE;
 	case IDC_BUTTON_KEYSETRENAME: // キーワードセットの名称変更
 		// モードレスダイアログの表示

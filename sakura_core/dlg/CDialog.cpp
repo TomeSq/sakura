@@ -23,7 +23,6 @@
 #include "CEditApp.h"
 #include "env/CShareData.h"
 #include "env/DLLSHAREDATA.h"
-#include "CDlgOpenFile.h"
 #include "recent/CRecent.h"
 #include "util/os.h"
 #include "util/shell.h"
@@ -332,11 +331,10 @@ BOOL CDialog::OnDestroy( void )
 		m_yPos = cWindowPlacement.rcNormalPosition.top;
 		m_nWidth = cWindowPlacement.rcNormalPosition.right - cWindowPlacement.rcNormalPosition.left;
 		m_nHeight = cWindowPlacement.rcNormalPosition.bottom - cWindowPlacement.rcNormalPosition.top;
-		// 2014.11.28 フォント変更によるサイズ変更対応
-		if( !m_bSizable ){
-			m_nWidth = -1;
-			m_nHeight = -1;
-		}
+	}
+	if( !m_bSizable ){
+		m_nWidth = -1;
+		m_nHeight = -1;
 	}
 	/* 破棄 */
 	if( NULL != m_hwndSizeBox ){
@@ -646,43 +644,6 @@ BOOL CDialog::OnCbnDropDown( HWND hwndCtl, bool scrollBar )
 	::ReleaseDC( hwndCtl, hDC );
 	return TRUE;
 }
-
-/*! ファイル選択
-	@note 実行ファイルのパスor設定ファイルのパスが含まれる場合は相対パスに変換
-*/
-BOOL CDialog::SelectFile(HWND parent, HWND hwndCtl, const TCHAR* filter, bool resolvePath, bool bAddTextFilter)
-{
-	CDlgOpenFile	cDlgOpenFile;
-	TCHAR			szFilePath[_MAX_PATH + 1];
-	TCHAR			szPath[_MAX_PATH + 1];
-	::GetWindowText( hwndCtl, szFilePath, _countof(szFilePath) );
-	// 2003.06.23 Moca 相対パスは実行ファイルからのパスとして開く
-	// 2007.05.19 ryoji 相対パスは設定ファイルからのパスを優先
-	if( resolvePath && _IS_REL_PATH( szFilePath ) ){
-		GetInidirOrExedir(szPath, szFilePath);
-	}else{
-		auto_strcpy(szPath, szFilePath);
-	}
-	/* ファイルオープンダイアログの初期化 */
-	cDlgOpenFile.Create(
-		::GetModuleHandle(NULL),
-		parent,
-		filter,
-		szPath
-	);
-	if( cDlgOpenFile.DoModal_GetOpenFileName(szPath, false, bAddTextFilter) ){
-		const TCHAR* fileName;
-		if( resolvePath ){
-			fileName = GetRelPath( szPath );
-		}else{
-			fileName = szPath;
-		}
-		::SetWindowText( hwndCtl, fileName );
-		return TRUE;
-	}
-	return FALSE;
-}
-
 
 // static
 bool CDialog::DirectoryUp( TCHAR* szDir )

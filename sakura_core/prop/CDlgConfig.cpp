@@ -132,6 +132,8 @@ CDlgConfig::CDlgConfig()
 {
 	m_pDlgConfigArg = new SDlgConfigArg();
 	m_pDlgConfigArg->m_nKeywordSet1 = -1;
+	m_pDlgConfigArg->m_tempTypeName[0] = _T('\0');
+	m_pDlgConfigArg->m_tempTypeExts[0] = _T('\0');
 	m_pHolder = new CConfigChildHolder();
 	m_nItemSelectNum = -1;
 }
@@ -154,6 +156,7 @@ INT_PTR CDlgConfig::DoModal( HINSTANCE hInstance, HWND hwndParent, CImageListMgr
 	m_pDlgConfigArg->m_bTrayProc = bTrayProc;
 	m_pDlgConfigArg->m_cLookup.Init( m_pDlgConfigArg->m_Common.m_sMacro.m_MacroTable, &m_pDlgConfigArg->m_Common );
 	m_nItemSelectNum = PageNum;
+
 	return CDialog::DoModal( hInstance, hwndParent, IDD_CONFIG, 0 );
 }
 
@@ -267,28 +270,73 @@ void CDlgConfig::SetData()
 	m_pDlgConfigArg->m_Common = m_pShareData->m_Common;
 
 	int i;
+	std::auto_ptr<STypeConfig> type(new STypeConfig());
 	for( i = 0; i < GetDllShareData().m_nTypesCount; ++i ){
 		SKeywordSetIndex indexs;
-		STypeConfig type;
-		CDocTypeManager().GetTypeConfig(CTypeConfig(i), type);
-		indexs.typeId = type.m_id;
+		CDocTypeManager().GetTypeConfig(CTypeConfig(i), *type);
+		indexs.typeId = type->m_id;
 		for( int j = 0; j < MAX_KEYWORDSET_PER_TYPE; j++ ){
-			indexs.index[j] = type.m_nKeyWordSetIdx[j];
+			indexs.index[j] = type->m_nKeyWordSetIdx[j];
 		}
 		m_pDlgConfigArg->m_Types_nKeyWordSetIdx.push_back(indexs);
+	}
+
+	if( 0 <= m_pDlgConfigArg->m_nKeywordSet1 ){
+		// タイプ別設定のものを表示
+		m_pDlgConfigArg->m_Common.m_sSpecialKeyword.m_CKeyWordSetMgr.m_nCurrentKeyWordSetIdx = m_pDlgConfigArg->m_nKeywordSet1;
+	}else{
+		// -1だったら共通設定で最後に表示したものを維持する
 	}
 	
 	return;
 }
 
-/*! 設定の適用
+ /*!	ShareDataから一時領域へ設定をコピーする
+	@param[in] tempTypeKeywordSet キーワードセット
+	@param[in] name	タイプ属性：名称
+	@param[in] exts	タイプ属性：拡張子リスト
 */
-void CDlgConfig::ApplyData(){
+void CDlgConfig::InitData(const int* tempTypeKeywordSet, const TCHAR* name, const TCHAR* exts)
+{
+	m_pDlgConfigArg->m_tempTypeName[0] = _T('\0');
+	m_pDlgConfigArg->m_tempTypeExts[0] = _T('\0');
+
+	if( tempTypeKeywordSet ){
+		m_pDlgConfigArg->m_nKeywordSet1 = tempTypeKeywordSet[0];
+		auto_strcpy(m_pDlgConfigArg->m_tempTypeName, name);
+		auto_strcpy(m_pDlgConfigArg->m_tempTypeExts, exts);
+		SKeywordSetIndex indexs;
+		indexs.typeId = -1;
+		for( int j = 0; j < MAX_KEYWORDSET_PER_TYPE; j++ ){
+			indexs.index[j] = tempTypeKeywordSet[j];
+		}
+		m_pDlgConfigArg->m_Types_nKeyWordSetIdx.push_back(indexs);
+
+		if( 0 <= m_pDlgConfigArg->m_nKeywordSet1 ){
+			// タイプ別設定のものを表示
+			m_pDlgConfigArg->m_Common.m_sSpecialKeyword.m_CKeyWordSetMgr.m_nCurrentKeyWordSetIdx = m_pDlgConfigArg->m_nKeywordSet1;
+		}else{
+			// -1だったら共通設定で最後に表示したものを維持する
+		}
+	}
+}
+
+/*! 設定の適用
+	@param[out] tempTypeKeywordSet キーワードセット
+*/
+void CDlgConfig::ApplyData(int* tempTypeKeywordSet){
 	m_pShareData->m_Common = m_pDlgConfigArg->m_Common;
 
 	int i;
 	const int nSize = (int)m_pDlgConfigArg->m_Types_nKeyWordSetIdx.size();
-	for( i = 0; i < nSize; ++i ){
+	int nBegin = 0;
+	if( tempTypeKeywordSet ){
+		for( int j = 0; j < MAX_KEYWORDSET_PER_TYPE; j++ ){
+			tempTypeKeywordSet[j] = m_pDlgConfigArg->m_Types_nKeyWordSetIdx[0].index[j];
+		}
+		nBegin = 1;
+	}
+	for( i = nBegin; i < nSize; ++i ){
 		CTypeConfig configIdx = CDocTypeManager().GetDocumentTypeOfId( m_pDlgConfigArg->m_Types_nKeyWordSetIdx[i].typeId );
 		if( configIdx.IsValidType() ){
 			STypeConfig type;

@@ -43,7 +43,7 @@ enum ETabArrow {
 //! アウトライン解析の種類
 enum EOutlineType{
 	OUTLINE_C,
-	OUTLINE_CPP,
+	OUTLINE_C_CPP,		// C/C++自動認識
 	OUTLINE_PLSQL,
 	OUTLINE_TEXT,
 	OUTLINE_JAVA,
@@ -58,6 +58,7 @@ enum EOutlineType{
 	OUTLINE_PYTHON,		//	2007.02.08 genta Pythonアウトライン解析
 	OUTLINE_ERLANG,		//	2009.08.10 genta Erlangアウトライン解析
 	OUTLINE_XML,		//  2014.12.25 Moca
+	OUTLINE_CPP,		//  2015.11.13 Moca
 	//	新しいアウトライン解析は必ずこの直前へ挿入
 	OUTLINE_CODEMAX,
 	OUTLINE_BOOKMARK,	//	2001.12.03 hor
@@ -116,6 +117,13 @@ enum EStringLiteralType{
 	STRING_LITERAL_CPP11,	//!< C++11言語風 Raw String付き
 };
 
+//! 右クリックメニュー表示
+enum EKeyHelpRMenuType{
+	KEYHELP_RMENU_NONE,		//!< 非表示
+	KEYHELP_RMENU_TOP,		//!< メニュー先頭
+	KEYHELP_RMENU_BOTTOM,	//!< メニュー末尾
+};
+
 // -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- //
 //                       タイプ別設定                          //
 // -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- //
@@ -125,7 +133,7 @@ struct STypeConfig{
 	//2007.09.07 変数名変更: m_nMaxLineSize→m_nMaxLineKetas
 	int					m_nIdx;
 	int					m_id;
-	TCHAR				m_szTypeName[64];				//!< タイプ属性：名称
+	TCHAR				m_szTypeName[MAX_TYPES_NAME];	//!< タイプ属性：名称
 	TCHAR				m_szTypeExts[MAX_TYPES_EXTS];	//!< タイプ属性：拡張子リスト
 	int					m_nTextWrapMethod;				//!< テキストの折り返し方法		// 2008.05.30 nasukoji
 	CKetaXInt			m_nMaxLineKetas;				//!< 折り返し桁数
@@ -230,6 +238,7 @@ struct STypeConfig{
 	bool				m_bUseKeyHelpAllSearch;			//!< ヒットした次の辞書も検索(&A)
 	bool				m_bUseKeyHelpKeyDisp;			//!< 1行目にキーワードも表示する(&W)
 	bool				m_bUseKeyHelpPrefix;			//!< 選択範囲で前方一致検索(&P)
+	EKeyHelpRMenuType	m_eKeyHelpRMenuShowType;		//!< 右クリックメニュー表示
 //@@@ 2006.04.10 fon ADD-end
 
 	//	2002/04/30 YAZAKI Commonから移動。
@@ -253,13 +262,13 @@ struct STypeConfig{
 	int					m_nLineNumWidth;				//!< 行番号の最小桁数 2014.08.02 katze
 }; /* STypeConfig */
 
-// タイプ別設定(mini)
+//! タイプ別設定(mini)
 struct STypeConfigMini
 {
-	int			m_id;
-	TCHAR		m_szTypeName[64];				//!< タイプ属性：名称
-	TCHAR		m_szTypeExts[MAX_TYPES_EXTS];	//!< タイプ属性：拡張子リスト
-	SEncodingConfig		m_encoding;				//!< エンコードオプション
+	int					m_id;
+	TCHAR				m_szTypeName[MAX_TYPES_NAME];	//!< タイプ属性：名称
+	TCHAR				m_szTypeExts[MAX_TYPES_EXTS];	//!< タイプ属性：拡張子リスト
+	SEncodingConfig		m_encoding;						//!< エンコードオプション
 };
 
 

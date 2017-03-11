@@ -506,6 +506,9 @@ int CCodePage::AddComboCodePages(HWND hwnd, HWND combo, int nSelCode)
 	}
 	// 幅を変更
 	CDialog::OnCbnDropDown(combo, true);
+
+	// CPのチェックボックスがDisableになるのでフォーカスを移動
+	::SetFocus(combo);
 	return nSel;
 }
 

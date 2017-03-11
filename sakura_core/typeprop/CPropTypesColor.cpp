@@ -461,13 +461,16 @@ INT_PTR CPropTypesColor::DispatchEvent(
 			//強調キーワードの選択
 			case IDC_BUTTON_EDITKEYWORD:
 				{
+					GetData( hwndDlg ); // Keywrod1取得
 					CDlgConfig cDlgConfig;
-					cDlgConfig.m_pDlgConfigArg->m_nKeywordSet1 = m_nSet[0];
+					cDlgConfig.InitData( m_nSet, m_Types.m_szTypeName, m_Types.m_szTypeExts );
 					cDlgConfig.SetKeywordChildDialog();
 					if( cDlgConfig.DoModal( CSelectLang::getLangRsrcInstance(), hwndDlg, NULL, NULL, 0, true ) ){
 						CShareDataLockCounter::WaitLock( hwndDlg );
-						cDlgConfig.ApplyData();
-						SetData(hwndDlg);
+						cDlgConfig.ApplyData(m_nSet);
+						SetDataKeyword(hwndDlg);
+						// 設定済みキーワードが削除されたかもしれないので再設定
+						RearrangeKeywordSet( hwndDlg );
 						m_bChangeKeyWordSet = true;
 					}
 					return TRUE;
@@ -662,29 +665,11 @@ void CPropTypesColor::SetData( HWND hwndDlg )
 	::EnableWindow( ::GetDlgItem( hwndDlg, IDC_CHECK_STRINGENDLINE),
 		::IsDlgButtonCheckedBool( hwndDlg, IDC_CHECK_STRINGLINEONLY ) );
 
-	/* セット名コンボボックスの値セット */
-	hwndWork = ::GetDlgItem( hwndDlg, IDC_COMBO_SET );
-	Combo_ResetContent( hwndWork );  /* コンボボックスを空にする */
-	/* 一行目は空白 */
-	Combo_AddString( hwndWork, L" " );
-	//	Mar. 31, 2003 genta KeyWordSetMgrをポインタに
-	if( 0 < m_pCKeyWordSetMgr->m_nKeyWordSetNum ){
-		for( i = 0; i < m_pCKeyWordSetMgr->m_nKeyWordSetNum; ++i ){
-			Combo_AddString( hwndWork, m_pCKeyWordSetMgr->GetTypeName( i ) );
-		}
-		if( -1 == m_Types.m_nKeyWordSetIdx[0] ){
-			/* セット名コンボボックスのデフォルト選択 */
-			Combo_SetCurSel( hwndWork, 0 );
-		}else{
-			/* セット名コンボボックスのデフォルト選択 */
-			Combo_SetCurSel( hwndWork, m_Types.m_nKeyWordSetIdx[0] + 1 );
-		}
-	}
-
 	//強調キーワード1～10の設定
 	for( i = 0; i < MAX_KEYWORDSET_PER_TYPE; i++ ){
 		m_nSet[ i ] = m_Types.m_nKeyWordSetIdx[i];
 	}
+	SetDataKeyword( hwndDlg ); // m_nSet
 
 	/* 色をつける文字種類のリスト */
 	hwndWork = ::GetDlgItem( hwndDlg, IDC_LIST_COLORS );
@@ -737,6 +722,33 @@ void CPropTypesColor::SetData( HWND hwndDlg )
 	::DlgItem_SetText( hwndDlg, IDC_EDIT_VERTLINE, szVertLine );
 	// to here 2005.11.30 Moca 指定位置縦線の設定
 	return;
+}
+
+
+/*! セット名コンボボックスの値セット
+*/
+void CPropTypesColor::SetDataKeyword( HWND hwndDlg )
+{
+	int i;
+
+	HWND hwndWork = ::GetDlgItem( hwndDlg, IDC_COMBO_SET );
+	Combo_ResetContent( hwndWork );  /* コンボボックスを空にする */
+	/* 一行目は空白 */
+	Combo_AddString( hwndWork, L" " );
+	//	Mar. 31, 2003 genta KeyWordSetMgrをポインタに
+	if( 0 < m_pCKeyWordSetMgr->m_nKeyWordSetNum ){
+		const int* const set = m_nSet;
+		for( i = 0; i < m_pCKeyWordSetMgr->m_nKeyWordSetNum; ++i ){
+			Combo_AddString( hwndWork, m_pCKeyWordSetMgr->GetTypeName( i ) );
+		}
+		if( -1 == set[0] ){
+			/* セット名コンボボックスのデフォルト選択 */
+			Combo_SetCurSel( hwndWork, 0 );
+		}else{
+			/* セット名コンボボックスのデフォルト選択 */
+			Combo_SetCurSel( hwndWork, set[0] + 1 );
+		}
+	}
 }
 
 
@@ -809,6 +821,7 @@ int CPropTypesColor::GetData( HWND hwndDlg )
 		m_Types.m_nKeyWordSetIdx[0] = nIdx - 1;
 
 	}
+	m_nSet[0] = m_Types.m_nKeyWordSetIdx[0];
 
 	//強調キーワード2～10の取得(1は別)
 	for( nIdx = 1; nIdx < MAX_KEYWORDSET_PER_TYPE; nIdx++ ){

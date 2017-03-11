@@ -57,6 +57,8 @@ struct SDlgConfigArg
 {
 	CommonSetting	m_Common;
 	std::vector<SKeywordSetIndex>	m_Types_nKeyWordSetIdx;
+	TCHAR			m_tempTypeName[MAX_TYPES_NAME];	//!< タイプ属性：名称
+	TCHAR			m_tempTypeExts[MAX_TYPES_EXTS];	//!< タイプ属性：拡張子リスト
 
 	int				m_nKeywordSet1;
 	bool			m_bTrayProc;
@@ -102,7 +104,8 @@ public:
 	void SetDefaultChildDialog();
 	void SetKeywordChildDialog();
 
-	void ApplyData();
+	void InitData( const int* = NULL, const TCHAR* = NULL, const TCHAR* = NULL );	//!< DLLSHAREDATAから一時データ領域に設定を複製する
+	void ApplyData( int* = NULL );	//!< 一時データ領域からにDLLSHAREDATA設定をコピーする
 	int GetPageNum(){ return m_nItemSelectNum; }
 
 	SDlgConfigArg* m_pDlgConfigArg;

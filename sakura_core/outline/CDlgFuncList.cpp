@@ -212,7 +212,7 @@ CDlgFuncList::CDlgFuncList() : CDialog(true)
 	m_nSortColOld = -1;
 	m_bLineNumIsCRLF = false;	/* 行番号の表示 false=折り返し単位／true=改行単位 */
 	m_bWaitTreeProcess = false;	// 2002.02.16 hor Treeのダブルクリックでフォーカス移動できるように 2/4
-	m_nSortType = 0;
+	m_nSortType = SORTTYPE_DEFAULT;
 	m_cFuncInfo = NULL;			/* 現在の関数情報 */
 	m_bEditWndReady = false;	/* エディタ画面の準備完了 */
 	m_bInChangeLayout = false;
@@ -434,7 +434,7 @@ void CDlgFuncList::SetData()
 
 
 	SetDocLineFuncList();
-	if( OUTLINE_CPP == m_nListType ){	/* C++メソッドリスト */
+	if( OUTLINE_C_CPP == m_nListType || OUTLINE_CPP == m_nListType ){	/* C++メソッドリスト */
 		m_nViewType = VIEWTYPE_TREE;
 		SetTreeJava( GetHwnd(), TRUE );	// Jan. 04, 2002 genta Java Method Treeに統合
 		::SetWindowText( GetHwnd(), LS(STR_DLGFNCLST_TITLE_CPP) );
@@ -784,14 +784,14 @@ void CDlgFuncList::SetData()
 		}
 		::ShowWindow( hWnd_Combo_Sort , SW_SHOW );
 		Combo_ResetContent( hWnd_Combo_Sort ); // 2002.11.10 Moca 追加
-		Combo_AddString( hWnd_Combo_Sort , LS(STR_DLGFNCLST_SORTTYPE1));
-		Combo_AddString( hWnd_Combo_Sort , LS(STR_DLGFNCLST_SORTTYPE2));
+		Combo_AddString( hWnd_Combo_Sort , LS(STR_DLGFNCLST_SORTTYPE1));	// SORTTYPE_DEFAULT
+		Combo_AddString( hWnd_Combo_Sort , LS(STR_DLGFNCLST_SORTTYPE1_2));	// SORTTYPE_DEFAULT_DESC
+		Combo_AddString( hWnd_Combo_Sort , LS(STR_DLGFNCLST_SORTTYPE2));    // SORTTYPE_ATOZ
+		Combo_AddString( hWnd_Combo_Sort , LS(STR_DLGFNCLST_SORTTYPE2_2));  // SORTTYPE_ZTOA
 		Combo_SetCurSel( hWnd_Combo_Sort , m_nSortType );
 		::ShowWindow( GetDlgItem( GetHwnd(), IDC_STATIC_nSortType ), SW_SHOW );
 		// 2002.11.10 Moca 追加 ソートする
-		if( 1 == m_nSortType ){
-			SortTree(::GetDlgItem( GetHwnd() , IDC_TREE_FL),TVI_ROOT);
-		}
+		SortTree(::GetDlgItem( GetHwnd() , IDC_TREE_FL),TVI_ROOT);
 	}else if( m_nListType == OUTLINE_FILETREE ){
 		::ShowWindow( GetItemHwnd(IDC_COMBO_nSortType), SW_HIDE );
 		::ShowWindow( GetItemHwnd(IDC_STATIC_nSortType), SW_HIDE );
@@ -841,8 +841,8 @@ bool CDlgFuncList::GetTreeFileFullName(HWND hwndTree, HTREEITEM target, std::tst
 }
 
 
-/*! LParamからFuncInfoの番号を算出
-	vecにはダミーのLParam番号が入っているのでずれている数を数える
+/*! lParamからFuncInfoの番号を算出
+	vecにはダミーのlParam番号が入っているのでずれている数を数える
 */
 static int TreeDummylParamToFuncInfoIndex(std::vector<int>& vec, LPARAM lParam)
 {
@@ -957,7 +957,6 @@ void CDlgFuncList::SetTreeJava( HWND hwndDlg, BOOL bAddClass )
 	HTREEITEM		htiSelected = NULL;
 	TV_ITEM			tvi;
 	int				nClassNest;
-	std::tstring	strLabel;
 	std::vector<std::tstring> vStrClasses;
 
 	::EnableWindow( ::GetDlgItem( GetHwnd() , IDC_BUTTON_COPY ), TRUE );
@@ -987,7 +986,7 @@ void CDlgFuncList::SetTreeJava( HWND hwndDlg, BOOL bAddClass )
 	m_pcFuncInfoArr->SetAppendText( FL_OBJ_NAMESPACE,	LSW(STR_DLGFNCLST_APND_NAMESPACE),	false );
 	m_pcFuncInfoArr->SetAppendText( FL_OBJ_INTERFACE,	LSW(STR_DLGFNCLST_APND_INTERFACE),	false );
 	m_pcFuncInfoArr->SetAppendText( FL_OBJ_GLOBAL,		LSW(STR_DLGFNCLST_APND_GLOBAL),		false );
-	
+
 	nFuncLineOld = CLayoutInt(-1);
 	nFuncColOld = CLayoutInt(-1);
 	bSelected = FALSE;
@@ -1235,6 +1234,7 @@ void CDlgFuncList::SetTreeJava( HWND hwndDlg, BOOL bAddClass )
 		TreeView_SelectItem( hwndTree, htiSelectedTop );
 	}
 //	GetTreeTextNext( hwndTree, NULL, 0 );
+	m_nTreeItemCount = nlParamCount;
 	return;
 }
 
@@ -1543,7 +1543,8 @@ void CDlgFuncList::SetTree(bool tagjump, bool nolabel)
 		HTREEITEM hItem;
 		TV_INSERTSTRUCT cTVInsertStruct;
 		cTVInsertStruct.hParent = phParentStack[ nStackPointer ];
-		cTVInsertStruct.hInsertAfter = TVI_LAST;	//	必ず最後に追加。
+		// 2016.04.24 TVI_LASTは要素数が多いとすごく遅い。TVI_FIRSTを使い後でソートしなおす
+		cTVInsertStruct.hInsertAfter = TVI_FIRST;
 		cTVInsertStruct.item.mask = TVIF_TEXT | TVIF_PARAM;
 		cTVInsertStruct.item.pszText = pcFuncInfo->m_cmemFuncName.GetStringPtr();
 		cTVInsertStruct.item.lParam = i;	//	あとでこの数値（＝m_pcFuncInfoArrの何番目のアイテムか）を見て、目的地にジャンプするぜ!!。
@@ -2413,7 +2414,7 @@ BOOL CDlgFuncList::OnMinMaxInfo( LPARAM lParam )
 	lpmmi->ptMaxTrackSize.y = m_ptDefaultSize.y*2;
 	return 0;
 }
-int CALLBACK Compare_by_ItemData(LPARAM lParam1, LPARAM lParam2, LPARAM lParamSort)
+static inline int CALLBACK Compare_by_ItemData(LPARAM lParam1, LPARAM lParam2, LPARAM lParamSort)
 {
 	if( lParam1< lParam2 )
 		return -1;
@@ -2421,6 +2422,33 @@ int CALLBACK Compare_by_ItemData(LPARAM lParam1, LPARAM lParam2, LPARAM lParamSo
 		return 1;
 	else
 		return 0;
+}
+
+static int CALLBACK Compare_by_ItemDataDesc(LPARAM lParam1, LPARAM lParam2, LPARAM lParamSort)
+{
+	return Compare_by_ItemData(lParam2, lParam1, lParamSort);
+}
+
+struct STreeViewSortData{
+	std::vector<std::tstring> m_vecText;
+};
+
+static int CALLBACK Compare_by_ItemText(LPARAM lParam1, LPARAM lParam2, LPARAM lParamSort)
+{
+	STreeViewSortData* pData = (STreeViewSortData*)lParamSort;
+	std::tstring* pText1 = &pData->m_vecText[lParam1];
+	std::tstring* pText2 = &pData->m_vecText[lParam2];
+	int result = ::lstrcmpi(pText1->c_str(), pText2->c_str());
+	if( result == 0 ){
+		// 同じ名前は登録順
+		return Compare_by_ItemData(lParam1, lParam2, lParamSort);
+	}
+	return result;
+}
+
+static int CALLBACK Compare_by_ItemTextDesc(LPARAM lParam1, LPARAM lParam2, LPARAM lParamSort)
+{
+	return Compare_by_ItemText(lParam2, lParam1, lParamSort);
 }
 
 BOOL CDlgFuncList::OnDestroy( void )
@@ -2476,7 +2504,10 @@ BOOL CDlgFuncList::OnDestroy( void )
 }
 
 
-BOOL CDlgFuncList::OnCbnSelChange( HWND hwndCtl, int wID )
+/*!
+	@date 2016.03.04 Moca OnCbnSelChange -> OnCbnSelEndOk マウスで一覧から選択中にソートされないように変更
+*/
+BOOL CDlgFuncList::OnCbnSelEndOk( HWND hwndCtl, int wID )
 {
 	int nSelect = Combo_GetCurSel( hwndCtl );
 	switch(wID)
@@ -2497,20 +2528,67 @@ BOOL CDlgFuncList::OnCbnSelChange( HWND hwndCtl, int wID )
 	return FALSE;
 
 }
-void  CDlgFuncList::SortTree(HWND hWndTree,HTREEITEM htiParent)
+
+static void SortTree_Sub(HWND hWndTree,HTREEITEM htiParent, STreeViewSortData& data, int nSortType)
 {
-	if( m_nSortType == 1 )
-		TreeView_SortChildren(hWndTree,htiParent,TRUE);
-	else
-	{
-		TVSORTCB sort;
-		sort.hParent =  htiParent;
+	if( SORTTYPE_ATOZ == nSortType || SORTTYPE_ZTOA == nSortType ){
+		for(HTREEITEM htiItem = TreeView_GetChild( hWndTree, htiParent ); NULL != htiItem ; htiItem = TreeView_GetNextSibling( hWndTree, htiItem )){
+			TVITEM item;
+			item.mask = TVIF_HANDLE | TVIF_TEXT | TVIF_PARAM;
+			item.hItem = htiItem;
+			std::vector<TCHAR> vecStr;
+			if( TreeView_GetItemTextVector(hWndTree, item, vecStr) ){
+				data.m_vecText[item.lParam].assign(&vecStr[0]);
+			}
+		}
+	}
+	TVSORTCB sort;
+	sort.hParent = htiParent;
+	switch( nSortType ){
+	case SORTTYPE_DEFAULT:
 		sort.lpfnCompare = Compare_by_ItemData;
 		sort.lParam = 0;
-		TreeView_SortChildrenCB(hWndTree , &sort , TRUE);
+		TreeView_SortChildrenCB(hWndTree , &sort , FALSE);
+		// TreeView_SortChildren(hWndTree,htiParent,FALSE);
+		break;
+	case SORTTYPE_DEFAULT_DESC:
+		sort.lpfnCompare = Compare_by_ItemDataDesc;
+		sort.lParam = 0;
+		TreeView_SortChildrenCB(hWndTree , &sort , FALSE);
+		break;
+	case SORTTYPE_ATOZ:
+		sort.lpfnCompare = Compare_by_ItemText;
+		sort.lParam = (LPARAM)&data;
+		TreeView_SortChildrenCB(hWndTree , &sort , FALSE);
+		break;
+	case SORTTYPE_ZTOA:
+		sort.lpfnCompare = Compare_by_ItemTextDesc;
+		sort.lParam = (LPARAM)&data;
+		TreeView_SortChildrenCB(hWndTree , &sort , FALSE);
+		break;
+	default:
+		assert(0);
+		break;
 	}
-	for(HTREEITEM htiItem = TreeView_GetChild( hWndTree, htiParent ); NULL != htiItem ; htiItem = TreeView_GetNextSibling( hWndTree, htiItem ))
-		SortTree(hWndTree,htiItem);
+
+	for(HTREEITEM htiItem = TreeView_GetChild( hWndTree, htiParent ); NULL != htiItem ; htiItem = TreeView_GetNextSibling( hWndTree, htiItem )){
+		SortTree_Sub(hWndTree, htiItem, data, nSortType);
+	}
+}
+
+
+
+void CDlgFuncList::SortTree(HWND hWndTree,HTREEITEM htiParent)
+{
+	STreeViewSortData data;
+	int size = m_pcFuncInfoArr->GetNum();
+	if( m_bDummyLParamMode ){
+		size = m_nTreeItemCount;
+	}
+	data.m_vecText.resize(size);
+	::SendMessageAny(hWndTree, WM_SETREDRAW, (WPARAM)FALSE, 0);
+	SortTree_Sub(hWndTree, htiParent, data, m_nSortType);
+	::SendMessageAny(hWndTree, WM_SETREDRAW, (WPARAM)TRUE, 0);
 }
 
 
@@ -2923,7 +3001,16 @@ INT_PTR CDlgFuncList::OnTimer( HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lPara
 		}
 		::KillTimer(hwnd, 2);
 		return 0L;
+	}else if( wParam == 3 ){
+		::KillTimer(hwnd, 3);
+		HWND hwndTree = ::GetDlgItem(hwnd, IDC_TREE_FL);
+		TreeView_ExpandAll(hwndTree, true, 64);
+	}else  if( wParam == 4 ){
+		::KillTimer(hwnd, 4);
+		HWND hwndTree = ::GetDlgItem(hwnd, IDC_TREE_FL);
+		TreeView_ExpandAll(hwndTree, false, 64);
 	}
+
 	if( !IsDocking() )
 		return 0L;
 
@@ -3303,6 +3390,20 @@ void CDlgFuncList::DoMenu( POINT pt, HWND hwndFrom )
 			flag |= MF_GRAYED;
 		}
 		::InsertMenu( hMenu, iPos++, MF_BYPOSITION | MF_STRING | flag, 451, LS(STR_DLGFNCLST_MENU_COPY) );
+		if( m_nViewType == VIEWTYPE_TREE ){
+			::InsertMenu(hMenu, iPos++, MF_BYPOSITION | MF_SEPARATOR, 0, NULL);
+			::InsertMenu(hMenu, iPos++, MF_BYPOSITION | MF_STRING, 500, LS(STR_DLGFNCLST_MENU_EXPAND));
+			::InsertMenu(hMenu, iPos++, MF_BYPOSITION | MF_STRING, 501, LS(STR_DLGFNCLST_MENU_COLLAPSE));
+		}else if( m_nListType == OUTLINE_BOOKMARK ){
+			::InsertMenu(hMenu, iPos++, MF_BYPOSITION | MF_SEPARATOR, 0, NULL);
+			flag = 0;
+			HWND hwndList = ::GetDlgItem(GetHwnd(), IDC_LIST_FL);
+			if( ListView_GetSelectedCount(hwndList) == 0 ){
+				flag |= MF_GRAYED;
+			}
+			::InsertMenu(hMenu, iPos++, MF_BYPOSITION | MF_STRING | flag, 510, LS(STR_DLGFNCLST_MENU_BOOK_DEL));
+			::InsertMenu(hMenu, iPos++, MF_BYPOSITION | MF_STRING, 511, LS(STR_DLGFNCLST_MENU_BOOK_ALL_DEL));
+		}
 		::InsertMenu( hMenu, iPos++, MF_BYPOSITION | MF_SEPARATOR, 0,	NULL );
 		::InsertMenu( hMenu, iPos++, MF_BYPOSITION | MF_STRING | MF_POPUP, (UINT_PTR)hMenuSub,	LS(STR_DLGFNCLST_MENU_WINPOS) );
 	}
@@ -3346,9 +3447,9 @@ void CDlgFuncList::DoMenu( POINT pt, HWND hwndFrom )
 	::DestroyMenu( hMenu );	// サブメニューは再帰的に破棄される
 
 	// メニュー選択された状態に切り替える
+	EFunctionCode nFuncCode = GetFuncCodeRedraw(m_nOutlineType);
 	HWND hwndEdit = pcEditView->m_pcEditWnd->GetHwnd();
 	if( nId == 450 ){	// 更新
-		EFunctionCode nFuncCode = GetFuncCodeRedraw(m_nOutlineType);
 		CEditView* pcEditView = (CEditView*)m_lParam;
 		pcEditView->GetCommander().HandleCommand( nFuncCode, true, SHOW_RELOAD, 0, 0, 0 );
 	}
@@ -3358,6 +3459,33 @@ void CDlgFuncList::DoMenu( POINT pt, HWND hwndFrom )
 	}
 	else if( nId == 452 ){	// 閉じる
 		::DestroyWindow( GetHwnd() );
+	}else if( nId == 500 ){	// すべて展開
+		::SetTimer(GetHwnd(), 3, 100, NULL);
+	}else if( nId == 501 ){	// すべて縮小
+		::SetTimer(GetHwnd(), 4, 100, NULL);
+	}else if( nId == 510 ){	// ブックマーク削除
+		HWND hwndList = ::GetDlgItem(GetHwnd(), IDC_LIST_FL);
+		int nItem = ListView_GetNextItem(hwndList, -1, LVNI_ALL | LVNI_SELECTED);
+		if( nItem != -1 ){
+			LVITEM item;
+			item.mask = LVIF_PARAM;
+			item.iItem = nItem;
+			item.iSubItem = 0;
+			ListView_GetItem(hwndList, &item);
+			const CFuncInfo* pFuncInfo = m_pcFuncInfoArr->GetAt(item.lParam);
+			// FIXME: 行番号があってるとは限らない
+			CDocLine* pCDocLine = pcEditView->GetDocument()->m_cDocLineMgr.GetLine(pFuncInfo->m_nFuncLineCRLF - 1);
+			if( pCDocLine ){
+				CBookmarkSetter cBookmark(pCDocLine);
+				cBookmark.SetBookmark(false);
+				pcEditView->m_pcEditWnd->Views_Redraw();
+			}
+		}
+		pcEditView->GetCommander().HandleCommand(nFuncCode, true, SHOW_RELOAD, 0, 0, 0);
+	}else if( nId == 511 ){	// ブックマークすべて削除
+		HWND hwndList = ::GetDlgItem(GetHwnd(), IDC_LIST_FL);
+		pcEditView->GetCommander().HandleCommand(F_BOOKMARK_RESET, TRUE, 0, 0, 0, 0);
+		pcEditView->GetCommander().HandleCommand(nFuncCode, true, SHOW_RELOAD, 0, 0, 0);
 	}
 	else if( nId == 300 || nId == 301 ){	// ドッキング配置の継承方法
 		ProfDockSet() = nId - 300;

@@ -993,7 +993,7 @@ int FuncID_To_HelpContextID( EFunctionCode nFuncID )
 	case F_NEXTWINDOW:		return HLP000092;	//次のウィンドウ
 	case F_PREVWINDOW:		return HLP000091;	//前のウィンドウ
 	case F_WINLIST:			return HLP000314;	//ウィンドウ一覧	// 2006.10.05 ryoji
-	case F_DLGWINLIST:		return HLP000371;	//ウィンドウ一覧表示
+	case F_DLGWINLIST:		return HLP000372;	//ウィンドウ一覧表示
 	case F_BIND_WINDOW:		return HLP000311;	//結合して表示	// 2006.10.05 ryoji
 	case F_CASCADE:			return HLP000138;	//重ねて表示
 	case F_TILE_V:			return HLP000140;	//上下に並べて表示

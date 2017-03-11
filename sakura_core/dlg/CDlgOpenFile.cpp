@@ -1255,3 +1255,39 @@ bool CDlgOpenFile::GetSaveFileNameRecover( OPENFILENAMEZ* ofn )
 }
 
 
+
+/*! ファイル選択
+	@note 実行ファイルのパスor設定ファイルのパスが含まれる場合は相対パスに変換
+*/
+BOOL CDlgOpenFile::SelectFile(HWND parent, HWND hwndCtl, const TCHAR* filter, bool resolvePath, bool bAddTextFilter)
+{
+	CDlgOpenFile	cDlgOpenFile;
+	TCHAR			szFilePath[_MAX_PATH + 1];
+	TCHAR			szPath[_MAX_PATH + 1];
+	::GetWindowText( hwndCtl, szFilePath, _countof(szFilePath) );
+	// 2003.06.23 Moca 相対パスは実行ファイルからのパスとして開く
+	// 2007.05.19 ryoji 相対パスは設定ファイルからのパスを優先
+	if( resolvePath && _IS_REL_PATH( szFilePath ) ){
+		GetInidirOrExedir(szPath, szFilePath);
+	}else{
+		auto_strcpy(szPath, szFilePath);
+	}
+	/* ファイルオープンダイアログの初期化 */
+	cDlgOpenFile.Create(
+		::GetModuleHandle(NULL),
+		parent,
+		filter,
+		szPath
+	);
+	if( cDlgOpenFile.DoModal_GetOpenFileName(szPath, false, bAddTextFilter) ){
+		const TCHAR* fileName;
+		if( resolvePath ){
+			fileName = GetRelPath( szPath );
+		}else{
+			fileName = szPath;
+		}
+		::SetWindowText( hwndCtl, fileName );
+		return TRUE;
+	}
+	return FALSE;
+}
