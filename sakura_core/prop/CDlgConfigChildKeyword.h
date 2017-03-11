@@ -14,6 +14,7 @@ public:
 protected:
 	BOOL OnInitDialog( HWND hWnd, WPARAM wParam, LPARAM lParam );
 	BOOL OnNotify( WPARAM wParam, LPARAM lParam );
+	BOOL OnTimer( WPARAM wParam );
 	BOOL OnCbnSelChange( HWND hwndCtl, int wID );
 	BOOL OnBnClicked( int );
 	BOOL OnDestroy();

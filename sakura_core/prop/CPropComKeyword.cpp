@@ -183,6 +183,23 @@ BOOL CDlgConfigChildKeyword::OnNotify( WPARAM wParam, LPARAM lParam )
 }
 
 
+BOOL CDlgConfigChildKeyword::OnTimer( WPARAM wParam)
+{
+	if( wParam == 1 ){
+		HWND hwndDlg = GetHwnd();
+		HWND hwndLIST_KEYWORD = ::GetDlgItem( hwndDlg, IDC_LIST_KEYWORD );
+
+		int nIndex1 = ListView_GetNextItem( hwndLIST_KEYWORD, -1, LVNI_ALL | LVNI_SELECTED );
+		BOOL bEnable = TRUE;
+		if( -1 == nIndex1 ){
+			bEnable = FALSE;
+		}
+		::EnableWindow( ::GetDlgItem( hwndDlg, IDC_BUTTON_EDITKEYWORD ), bEnable );
+		::EnableWindow( ::GetDlgItem( hwndDlg, IDC_BUTTON_DELKEYWORD ), bEnable );
+	}
+	return TRUE;
+}
+
 BOOL CDlgConfigChildKeyword::OnCbnSelChange( HWND hwndCtl, int wID )
 {
 	if( IDC_COMBO_SET == wID ){
