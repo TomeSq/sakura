@@ -2156,12 +2156,18 @@ bool CMacro::HandleFunction(CEditView *View, EFunctionCode ID, const VARIANT *Ar
 				}
 			}
 
+			std::wstring sComboText;
+			if( ArgSize >= 4 ){
+				if(variant_to_wstr(Arguments[3], sComboText) == false) return false;	// VT_BSTR‚Æ‚µ‚Ä‰ðŽß
+			}
+			std::tstring sComboTextT = to_tchar(sComboText.c_str());
+
 			TCHAR *Buffer = new TCHAR[ nMaxLen+1 ];
 			size_t nLen = t_min( sDefaultValue.length(), (size_t)nMaxLen);
 			auto_memcpy( Buffer, sDefaultValue.c_str(), nLen );
 			Buffer[nLen] = _T('\0');
 			CDlgInput1 cDlgInput1;
-			if( cDlgInput1.DoModal( G_AppInstance(), View->GetHwnd(), _T("sakura macro"), sMessage.c_str(), nMaxLen, Buffer ) ) {
+			if( cDlgInput1.DoModal( G_AppInstance(), View->GetHwnd(), _T("sakura macro"), sMessage.c_str(), nMaxLen, Buffer, sComboTextT.c_str() ) ) {
 				SysString S( Buffer, _tcslen(Buffer) );
 				Wrap( &Result )->Receive( S );
 			}else{

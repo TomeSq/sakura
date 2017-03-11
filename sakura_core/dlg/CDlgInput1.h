@@ -30,8 +30,8 @@ public:
 	*/
 	CDlgInput1();
 	~CDlgInput1();
-	BOOL DoModal( HINSTANCE , HWND , const TCHAR* , const TCHAR* , int , TCHAR*  );	/* モードレスダイアログの表示 */
-	BOOL DoModal( HINSTANCE , HWND , const TCHAR* , const TCHAR* , int , NOT_TCHAR*  );	/* モードレスダイアログの表示 */
+	BOOL DoModal( HINSTANCE , HWND , const TCHAR* , const TCHAR* , int , TCHAR*, const TCHAR* =NULL );	/* モードレスダイアログの表示 */
+	BOOL DoModal( HINSTANCE , HWND , const TCHAR* , const TCHAR* , int , NOT_TCHAR*, const TCHAR* =NULL );	/* モードレスダイアログの表示 */
 	/*
 	||  Attributes & Operations
 	*/
@@ -46,6 +46,7 @@ public:
 	int			m_nMaxTextLen;	/* 入力サイズ上限 */
 //	char*		m_pszText;		/* テキスト */
 	CNativeT	m_cmemText;		/* テキスト */
+	CNativeT	m_cmemComboText;
 protected:
 	/*
 	||  実装ヘルパ関数

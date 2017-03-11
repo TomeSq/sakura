@@ -83,7 +83,8 @@ BOOL CDlgInput1::DoModal(
 	const TCHAR*	pszTitle,
 	const TCHAR*	pszMessage,
 	int				nMaxTextLen,
-	TCHAR*			pszText
+	TCHAR*			pszText,
+	const TCHAR*	pszComboText
 )
 {
 	BOOL bRet;
@@ -94,6 +95,11 @@ BOOL CDlgInput1::DoModal(
 	m_nMaxTextLen = nMaxTextLen;	/* 入力サイズ上限 */
 //	m_pszText = pszText;			/* テキスト */
 	m_cmemText.SetString( pszText );
+	if(pszComboText){
+		m_cmemComboText.SetString(pszComboText);
+	}else{
+		m_cmemComboText.SetString(_T(""));
+	}
 	bRet = (BOOL)::DialogBoxParam(
 		CSelectLang::getLangRsrcInstance(),
 		MAKEINTRESOURCE( IDD_INPUT1 ),
@@ -111,12 +117,13 @@ BOOL CDlgInput1::DoModal(
 	const TCHAR*	pszTitle,
 	const TCHAR*	pszMessage,
 	int				nMaxTextLen,
-	NOT_TCHAR*		pszText
+	NOT_TCHAR*		pszText,
+	const TCHAR*	pszComboText
 )
 {
 	std::vector<TCHAR> buf(nMaxTextLen);
 	buf[0] = _T('\0');
-	BOOL ret=DoModal(hInstApp, hwndParent, pszTitle, pszMessage, nMaxTextLen, &buf[0]);
+	BOOL ret=DoModal(hInstApp, hwndParent, pszTitle, pszMessage, nMaxTextLen, &buf[0], pszComboText);
 	if(ret){
 		auto_strncpy(pszText,to_not_tchar(&buf[0]), nMaxTextLen);
 		pszText[nMaxTextLen-1] = 0;
@@ -147,6 +154,43 @@ INT_PTR CDlgInput1::DispatchEvent(
 		EditCtl_LimitText( ::GetDlgItem( hwndDlg, IDC_EDIT_INPUT1 ), m_nMaxTextLen );	/* 入力サイズ上限 */
 		DlgItem_SetText( hwndDlg, IDC_EDIT_INPUT1, m_cmemText.GetStringPtr() );	/* テキスト */
 		::SetWindowText( ::GetDlgItem( hwndDlg, IDC_STATIC_MSG ), m_pszMessage );	/* メッセージ */
+		Combo_LimitText( ::GetDlgItem( hwndDlg, IDC_COMBO_TEXT ), m_nMaxTextLen );	/* 入力サイズ上限 */
+		DlgItem_SetText( hwndDlg, IDC_COMBO_TEXT, m_cmemText.GetStringPtr() );	/* テキスト */
+		{
+			HWND hwnd = GetDlgItem(hwndDlg, IDC_COMBO_TEXT);
+			std::wstring text = to_wchar(m_cmemComboText.GetStringPtr());
+			std::wstring def = to_wchar(m_cmemText.GetStringPtr());
+			size_t prev = 0;
+			int select = -1;
+			int index = 0;
+			for(size_t i = 0; i < text.length(); i++){
+				if(text[i] == L'\n' || i == text.length() - 1){
+					if(text[i] != L'\n'){
+						// 末尾マッチ
+						i++;
+					}
+					if(prev < i){
+						std::wstring item = text.substr(prev, i - prev);
+						Combo_AddString(hwnd, item.c_str());
+						if(def == item){
+							select = index;
+						}
+						index++;
+					}
+					prev = i + 1;
+				}
+			}
+			if(0 <= select){
+				Combo_SetCurSel(hwnd, select);
+			}
+			if(0 == text.length()){
+				// テキストを使用→コンボボックスを非表示
+				::ShowWindow(hwnd, SW_HIDE);
+			}else{
+				// テキストを非表示
+				::ShowWindow(::GetDlgItem(hwndDlg, IDC_EDIT_INPUT1), SW_HIDE);
+			}
+		}
 
 		return TRUE;
 	case WM_COMMAND:
@@ -157,8 +201,15 @@ INT_PTR CDlgInput1::DispatchEvent(
 		case BN_CLICKED:
 			switch( wID ){
 			case IDOK:
-				m_cmemText.AllocStringBuffer( ::GetWindowTextLength( ::GetDlgItem( hwndDlg, IDC_EDIT_INPUT1 ) ) );
-				::GetWindowText( ::GetDlgItem( hwndDlg, IDC_EDIT_INPUT1 ), m_cmemText.GetStringPtr(), m_nMaxTextLen + 1 );	/* テキスト */
+				if(0 == m_cmemComboText.GetStringLength()){
+					// テキスト
+					m_cmemText.AllocStringBuffer(::GetWindowTextLength(::GetDlgItem(hwndDlg, IDC_EDIT_INPUT1)));
+					::GetWindowText(::GetDlgItem(hwndDlg, IDC_EDIT_INPUT1), m_cmemText.GetStringPtr(), m_nMaxTextLen + 1);
+				}else{
+					// コンボボックス
+					m_cmemText.AllocStringBuffer(::GetWindowTextLength(::GetDlgItem(hwndDlg, IDC_COMBO_TEXT)));
+					Combo_GetText(::GetDlgItem(hwndDlg,IDC_COMBO_TEXT), m_cmemText.GetStringPtr(), m_nMaxTextLen + 1);	
+				}
 				::EndDialog( hwndDlg, TRUE );
 				return TRUE;
 			case IDCANCEL:
