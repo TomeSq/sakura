@@ -38,6 +38,11 @@ struct SShare_SearchKeywords{
 	StaticVector< StaticString<WCHAR, _MAX_PATH>, MAX_REPLACEKEY, const WCHAR*>	m_aReplaceKeys;
 	StaticVector< StaticString<TCHAR, MAX_GREP_PATH>, MAX_GREPFILE,   const TCHAR*>	m_aGrepFiles;
 	StaticVector< StaticString<TCHAR, MAX_GREP_PATH>, MAX_GREPFOLDER, const TCHAR*>	m_aGrepFolders;
+
+	bool m_aSearchKeysFav[MAX_SEARCHKEY];
+	bool m_aReplaceKeysFav[MAX_REPLACEKEY];
+	bool m_aGrepFilesFav[MAX_GREPFILE];
+	bool m_aGrepFoldersFav[MAX_GREPFOLDER];
 };
 
 //! 検索キーワード管理
