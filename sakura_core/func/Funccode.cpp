@@ -152,6 +152,7 @@ const EFunctionCode pnFuncList_Edit[] = {	//Oct. 16, 2000 JEPRO 変数名変更(List3
 	F_RTRIM				,	//右(末尾)の空白を削除	2001.12.03 hor
 	F_SORT_ASC			,	//選択行の昇順ソート	2001.12.06 hor
 	F_SORT_DESC			,	//選択行の降順ソート	2001.12.06 hor
+	F_SORT_EX_DIALOG	,	//ソート詳細
 	F_MERGE				,	//選択行のマージ		2001.12.06 hor
 	F_RECONVERT				//再変換 				2002.04.09 minfu
 //		F_WORDSREFERENCE		//単語リファレンス
@@ -775,6 +776,8 @@ int FuncID_To_HelpContextID( EFunctionCode nFuncID )
 	case F_RTRIM:		return HLP000211;	//右(末尾)の空白を削除
 	case F_SORT_ASC:	return HLP000212;	//選択行の昇順ソート
 	case F_SORT_DESC:	return HLP000213;	//選択行の降順ソート
+	case F_SORT_EX_DIALOG:	return HLP000372;	//ソート詳細
+	case F_SORT_EX:			return HLP000372;	//ソート詳細
 	case F_MERGE:		return HLP000214;	//選択行のマージ
 
 	/* クリップボード系 */

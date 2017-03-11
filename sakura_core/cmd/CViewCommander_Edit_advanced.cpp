@@ -30,6 +30,11 @@
 #include "uiparts/CWaitCursor.h"
 #include "mem/CMemoryIterator.h"	// @@@ 2002.09.28 YAZAKI
 #include "_os/COsVersionInfo.h"
+#include "dlg/CDlgSortEx.h"
+#include "convert/CConvert_ToUpper.h"
+#include "convert/CConvert_ZeneisuToHaneisu.h"
+#include "convert/CConvert_HankataToZenkata.h"
+#include "convert/CConvert_ToZenkata.h"
 
 
 using namespace std; // 2002/2/3 aroka to here
@@ -634,6 +639,213 @@ bool SortByKeyAsc(SORTDATA* pst1, SORTDATA* pst2)  {return CStringRef_comp(pst1-
 /*!	物理行のソートに使う関数(降順) */
 bool SortByKeyDesc(SORTDATA* pst1, SORTDATA* pst2) {return CStringRef_comp(pst1->sKey, pst2->sKey) > 0 ;}
 
+inline bool CNativeW_comp_dec(const CStringRef& c1, const CStringRef& c2)
+{
+	double a = _wtof(c1.GetPtr());
+	double b = _wtof(c2.GetPtr());
+	return a < b;
+}
+bool SortByKeyDecAsc (SORTDATA* pst1, SORTDATA* pst2) {return CNativeW_comp_dec(pst1->sKey, pst2->sKey);}
+bool SortByKeyDecDesc(SORTDATA* pst1, SORTDATA* pst2) {return !CNativeW_comp_dec(pst1->sKey, pst2->sKey);}
+
+inline bool IsHexChar(wchar_t c)
+{
+	return (L'0' <= c && c <= L'9') || (L'a' <= c && c <= L'f') || (L'A' <= c && c <= L'F');
+}
+inline int CharHexToInt(wchar_t c)
+{
+	if( L'0' <= c && c <= L'9' ){
+		return c - L'0';
+	}
+	if( L'a' <= c && c <= L'f' ){
+		return c - (L'a' - 10);
+	}
+	if( L'A' <= c && c <= L'F' ){
+		return c - (L'A' - 10);
+	}
+	assert(0);
+	return 0;
+}
+
+inline int GetHexCount(const wchar_t* p, int &nEnd, bool& bMinus)
+{
+	int i;
+	int nCount = 0;
+	bMinus = false;
+	for(i = 0; p[i] && (L' ' == p[i] || L'\t' == p[i]); i++){}
+	if( L'-' == p[i] ){
+		bMinus = true;
+		i++;
+		for(; p[i] && (L' ' == p[i] || L'\t' == p[i]); i++){}
+	}
+	if( '0' == p[i] && ('x' == p[i+1] || 'X' == p[i+1]) ){
+		i+=2;
+	}
+	for(; IsHexChar(p[i]); i++){
+		if( L'0' == p[i] && nCount == 0 ){
+			// skip 0;
+		}else{
+			nCount++;
+		}
+	}
+	nEnd = i;
+	if( bMinus ){
+		return -nCount;
+	}
+	return nCount;
+}
+
+inline int CNativeW_comp_hex(const CStringRef& c1, const CStringRef& c2)
+{
+	const wchar_t* p1 = c1.GetPtr();
+	int nEnd1;
+	bool bMinus1;
+	const int nCount1 = GetHexCount(p1, nEnd1, bMinus1);
+	const wchar_t* p2 = c2.GetPtr();
+	int nEnd2;
+	bool bMinus2;
+	const int nCount2 = GetHexCount(p2, nEnd2, bMinus2);
+	if( nCount1 != nCount2 ){
+		return nCount1 - nCount2;
+	}
+	for( int i = nCount1; 0 < i; i--){
+		int x = CharHexToInt(p1[nEnd1 - i]) - CharHexToInt(p2[nEnd2 - i]);
+		if( x != 0 ){
+			return x;
+		}
+	}
+	if( nCount1 == 0 ){
+		if( bMinus1 && !bMinus2 ){
+			// -0 < 0
+			return -1;
+		}
+		if( !bMinus1 && bMinus2 ){
+			// 0 > -0
+			return 1;
+		}
+	}
+	return 0;
+}
+
+bool SortByKeyHexAsc (SORTDATA* pst1, SORTDATA* pst2) {return CNativeW_comp_hex(pst1->sKey, pst2->sKey) < 0;}
+bool SortByKeyHexDesc(SORTDATA* pst1, SORTDATA* pst2) {return CNativeW_comp_hex(pst1->sKey, pst2->sKey) > 0;}
+
+struct SCompare_SortByAPI1{
+public:
+	SCompare_SortByAPI1(BOOL bAsc, int nOpt){
+		m_bAsc = bAsc;
+		m_nOpt = nOpt;
+	}
+	bool operator() (const SORTDATA* pst1, const SORTDATA* pst2){
+		int nRet = CompareStringW(LOCALE_USER_DEFAULT, m_nOpt,
+			pst1->sKey.GetPtr(), pst1->sKey.GetLength(),
+			pst2->sKey.GetPtr(), pst2->sKey.GetLength());
+		if( m_bAsc ){
+			return nRet == CSTR_LESS_THAN;
+		}
+		return nRet == CSTR_GREATER_THAN;
+	}
+private:
+	int m_nOpt;
+	BOOL m_bAsc;
+};
+
+struct SCompare_SortByAPI2{
+	typedef int (WINAPI* API_CompareStringOrdinal)(LPCWSTR, int, LPCWSTR, int, BOOL);
+public:
+	SCompare_SortByAPI2(BOOL bAsc, BOOL bIgnoreCase){
+		HMODULE hModule = ::GetModuleHandle(_T("KERNEL32"));
+		m_comp = (API_CompareStringOrdinal)GetProcAddress(hModule, "CompareStringOrdinal");
+		m_bAsc = bAsc;
+		m_bIgnoreCase = bIgnoreCase;
+	}
+	bool operator()(const SORTDATA* pst1, const SORTDATA* pst2){
+		int nRet = m_comp(pst1->sKey.GetPtr(), pst1->sKey.GetLength(),
+			pst2->sKey.GetPtr(), pst2->sKey.GetLength(), m_bIgnoreCase);
+		if( m_bAsc ){
+			return nRet == CSTR_LESS_THAN;
+		}
+		return nRet == CSTR_GREATER_THAN;
+	}
+	bool IsEnableAPI(){
+		return NULL != m_comp;
+	}
+private:
+	API_CompareStringOrdinal m_comp;
+	BOOL m_bAsc;
+	BOOL m_bIgnoreCase;
+};
+
+struct SCompare_SortByAPI3{
+	typedef int (WINAPI* API_StrCmpLogicalW)(LPCWSTR, LPCWSTR);
+public:
+	SCompare_SortByAPI3(BOOL bAsc){
+		m_hModule = ::LoadLibrary(_T("shlwapi.dll"));
+		m_comp = NULL;
+		if( m_hModule ){
+			m_comp = (API_StrCmpLogicalW)GetProcAddress(m_hModule, "StrCmpLogicalW");
+		}
+		m_bAsc = bAsc;
+	}
+	~SCompare_SortByAPI3(){
+		if( m_hModule ){
+			::FreeLibrary(m_hModule);
+			m_hModule = NULL;
+		}
+	}
+	bool operator()(const SORTDATA* pst1, const SORTDATA* pst2){
+		int nRet;
+		if( m_comp ){
+			// win 2000 + IE6 以上
+			// image image.jpg image1.jpg image2.jpg image10.jpg
+			nRet = m_comp(pst1->sKey.GetPtr(), pst2->sKey.GetPtr());
+		}else{
+			// 一応 win9x対応
+			const TCHAR* tstrA = to_tchar(pst1->sKey.GetPtr());
+			const TCHAR* tstrB = to_tchar(pst1->sKey.GetPtr());
+			nRet = 2 - CompareString(LOCALE_USER_DEFAULT, 0, tstrA, -1, tstrB, -1);
+		}
+		if( m_bAsc ){
+			return nRet < 0;
+		}
+		return nRet > 0;
+	}
+private:
+	HMODULE m_hModule;
+	API_StrCmpLogicalW m_comp;
+	BOOL m_bAsc;
+};
+
+enum ESortExOptionFlags{
+	ESORT_EX_ASC    = 0x01,
+	ESORT_EX_DESC   = 0,
+
+	ESORT_EX_MODE_STRING = 0,
+	ESORT_EX_MODE_API1   = 0x02,
+	ESORT_EX_MODE_API2   = 0x04,
+	ESORT_EX_MODE_API3   = 0x06,
+	ESORT_EX_MODE_DEC    = 0x08,
+	ESORT_EX_MODE_HEX    = 0x0A,
+	ESORT_EX_MODE_NOT_STRING    = 0x0E,
+
+	ESORT_EX_CASE     = 0x010,
+	ESORT_EX_KANA     = 0x020,
+	ESORT_EX_WIDTH    = 0x040,
+	ESORT_EX_SPACE    = 0x080,
+	ESORT_EX_STRING   = 0x100,
+	ESORT_EX_NUM      = 0x200,
+	ESORT_EX_IGNORES  = 0x3F0,
+};
+
+void CViewCommander::Command_SORT(BOOL bAsc)
+{
+	int nOpt = 0;
+	if( bAsc ){
+		nOpt |= ESORT_EX_ASC;
+	}
+	Command_SORT_EX(nOpt);
+}
+
 /*!	@brief 物理行のソート
 
 	非選択時は何も実行しない．矩形選択時は、その範囲をキーにして物理行をソート．
@@ -646,8 +858,15 @@ bool SortByKeyDesc(SORTDATA* pst1, SORTDATA* pst2) {return CStringRef_comp(pst1-
 	@date 2010.07.27 行ソートでコピーを減らす/NULより後ろも比較対照に
 	@date 2013.06.19 Moca 矩形選択時最終行に改行がない場合は付加+ソート後の最終行の改行を削除
 */
-void CViewCommander::Command_SORT(BOOL bAsc)	//bAsc:TRUE=昇順,FALSE=降順
+void CViewCommander::Command_SORT_EX(int nOpt)
 {
+	BOOL bAsc;
+	if( nOpt & ESORT_EX_ASC ){
+		bAsc = TRUE;
+	}else{
+		bAsc = FALSE;
+	}
+	bool bConvertKey = (0 != (nOpt & ESORT_EX_IGNORES));
 	CLayoutRange sRangeA;
 	CLogicRange sSelectOld;
 
@@ -659,6 +878,7 @@ void CViewCommander::Command_SORT(BOOL bAsc)	//bAsc:TRUE=昇順,FALSE=降順
 	CLogicInt		nLineLen;
 	int			j;
 	std::vector<SORTDATA*> sta;
+	std::vector<CNativeW*> sort_ex;
 
 	if( !m_pCommanderView->GetSelectionInfo().IsTextSelected() ){			/* テキストが選択されているか */
 		return;
@@ -708,6 +928,10 @@ void CViewCommander::Command_SORT(BOOL bAsc)	//bAsc:TRUE=昇順,FALSE=降順
 	}
 
 	sta.reserve(sSelectOld.GetTo().GetY2() - sSelectOld.GetFrom().GetY2() );
+	if( bConvertKey ){
+		sort_ex.reserve(sSelectOld.GetTo().GetY2() - sSelectOld.GetFrom().GetY2());
+	}
+	
 	for( CLogicInt i = sSelectOld.GetFrom().GetY2(); i < sSelectOld.GetTo().y; i++ ){
 		const CDocLine* pcDocLine = GetDocument()->m_cDocLineMgr.GetLine( i );
 		const CNativeW& cmemLine = pcDocLine->_GetDocLineDataWithEOL();
@@ -728,6 +952,72 @@ void CViewCommander::Command_SORT(BOOL bAsc)	//bAsc:TRUE=昇順,FALSE=降順
 				pst->sKey = CStringRef( L"", 0 );
 			}
 		}
+		if( bConvertKey ){
+			CNativeW cmemKey;
+			if( bBeginBoxSelectOld ){
+				cmemKey.SetString(pst->sKey.GetPtr(), pst->sKey.GetLength());
+			}else{
+				cmemKey.SetNativeData(cmemLine);
+			}
+			if( nOpt & ESORT_EX_CASE ){
+				CConvert_ToUpper().DoConvert(&cmemKey);
+			}
+			bool bHanKata = false;
+			if( nOpt & ESORT_EX_KANA ){
+				// ヴがあるのでカタカナにそろえる
+				bHanKata = true;
+				CConvert_HankataToZenkata().DoConvert(&cmemKey);
+				CConvert_ZenhiraToZenkata().DoConvert(&cmemKey);
+			}
+			if( nOpt & ESORT_EX_WIDTH ){
+				CConvert_ZeneisuToHaneisu().DoConvert(&cmemKey);
+				if( !bHanKata ){
+					CConvert_HankataToZenkata().DoConvert(&cmemKey);
+				}
+			}
+			if( nOpt & ESORT_EX_SPACE ){
+				cmemKey.Replace(L"\t", L"");
+				cmemKey.Replace(L" ", L"");
+				const wchar_t pszNbsp[] = {0xa0, L'\0'};
+				cmemKey.Replace(pszNbsp, L""); // &nbsp;
+				cmemKey.Replace(L"\u3000", L"");
+			}
+			CNativeW* pcMemKey = new CNativeW();
+			pcMemKey->swap(cmemKey);
+			sort_ex.push_back(pcMemKey);
+			pst->sKey = CStringRef(pcMemKey->GetStringPtr(), pcMemKey->GetStringLength());
+		}else{
+			int nOptMode = nOpt & ESORT_EX_MODE_NOT_STRING;
+			if( 0 != nOptMode ){
+				if( nOptMode == ESORT_EX_MODE_API3 ){
+					// ファイル名ソート
+					CStringRef key;
+					if( bBeginBoxSelectOld ){
+						key = pst->sKey;
+					}else{
+						key = CStringRef(cmemLine.GetStringPtr(), cmemLine.GetStringLength());
+					}
+					bool bExtEol = GetDllShareData().m_Common.m_sEdit.m_bEnableExtEol;
+					const wchar_t* pKey = key.GetPtr();
+					// 末尾の改行・スペース・タブを削除
+					int k = key.GetLength();
+					while (0 < k && (WCODE::IsLineDelimiter(pKey[k-1], bExtEol) ||
+						L' ' == pKey[k-1] || L'\t' == pKey[k-1]) ){
+						k--;
+					}
+					CNativeW* pcMemKey = new CNativeW(pKey, k);
+					sort_ex.push_back(pcMemKey);
+					pst->sKey = CStringRef(pcMemKey->GetStringPtr(), pcMemKey->GetStringLength());
+				}else if( bBeginBoxSelectOld ){
+					// 矩形で十進・十六進のとき、そのままだとキー文字列がNUL終端ではないので再確保する
+					CNativeW* pcMemKey = new CNativeW(pst->sKey.GetPtr(), pst->sKey.GetLength());
+					sort_ex.push_back(pcMemKey);
+					pst->sKey = CStringRef(pcMemKey->GetStringPtr(), pcMemKey->GetStringLength());
+				}else{
+					pst->sKey = CStringRef(cmemLine.GetStringPtr(), cmemLine.GetStringLength());
+				}
+			}
+		}
 		pst->pCmemLine = &cmemLine;
 		sta.push_back(pst);
 	}
@@ -741,7 +1031,62 @@ void CViewCommander::Command_SORT(BOOL bAsc)	//bAsc:TRUE=昇順,FALSE=降順
 			}
 		}
 	}
-	if( bBeginBoxSelectOld ){
+	if( nOpt & ESORT_EX_MODE_NOT_STRING ){
+		const int nOptMode = nOpt & ESORT_EX_MODE_NOT_STRING;
+		if( nOptMode == ESORT_EX_MODE_API1 ){
+			int nFuncOpt = 0;
+			if( nOpt & ESORT_EX_CASE ){
+				nFuncOpt |= NORM_IGNORECASE;
+			}
+			if( nOpt & ESORT_EX_KANA ){
+				nFuncOpt |= NORM_IGNOREKANATYPE;
+			}
+			if( nOpt & ESORT_EX_WIDTH ){
+				nFuncOpt |= NORM_IGNOREWIDTH;
+			}
+			if( nOpt & ESORT_EX_SPACE ){
+				nFuncOpt |= NORM_IGNORENONSPACE;
+			}
+			if( nOpt & ESORT_EX_STRING ){
+				nFuncOpt |= SORT_STRINGSORT;
+			}
+			if( nOpt & ESORT_EX_NUM ){
+#ifndef SORT_DIGITSASNUMBERS
+// win7以上, abc1, abc2, abc10のような順番にする
+#define SORT_DIGITSASNUMBERS 0x00000008
+#endif
+				nFuncOpt |= SORT_DIGITSASNUMBERS;
+			}
+			SCompare_SortByAPI1 compare(bAsc, nFuncOpt);
+			std::stable_sort(sta.begin(), sta.end(), compare);
+		}else if( nOptMode == ESORT_EX_MODE_API2 ){
+			BOOL bIgnoreCase = FALSE;
+			if( nOpt & ESORT_EX_CASE ){
+				bIgnoreCase = TRUE;
+			}
+			SCompare_SortByAPI2 compare(bAsc, bIgnoreCase);
+			if( compare.IsEnableAPI() ){
+				std::stable_sort(sta.begin(), sta.end(), compare);
+			}
+		}else if( nOptMode == ESORT_EX_MODE_API3 ){
+			SCompare_SortByAPI3 compare(bAsc);
+			std::stable_sort(sta.begin(), sta.end(), compare);
+		}else if( nOptMode == ESORT_EX_MODE_DEC ){
+			if( bAsc ){
+				std::stable_sort(sta.begin(), sta.end(), SortByKeyDecAsc);
+			}else{
+				std::stable_sort(sta.begin(), sta.end(), SortByKeyDecDesc);
+			}
+		}else if( nOptMode == ESORT_EX_MODE_HEX ){
+			if( bAsc ){
+				std::stable_sort(sta.begin(), sta.end(), SortByKeyHexAsc);
+			}else{
+				std::stable_sort(sta.begin(), sta.end(), SortByKeyHexDesc);
+			}
+		}else{
+			assert(0);
+		}
+	}else if( bBeginBoxSelectOld || bConvertKey ){
 		if(bAsc){
 			std::stable_sort(sta.begin(), sta.end(), SortByKeyAsc);
 		}else{
@@ -783,6 +1128,10 @@ void CViewCommander::Command_SORT(BOOL bAsc)	//bAsc:TRUE=昇順,FALSE=降順
 		for(int k = 0; k < nSize; k++){
 			delete sta[k];
 		}
+		const size_t nSize2 = sort_ex.size();
+		for(size_t k = 0; k < nSize2; k++){
+			delete sort_ex[k];
+		}
 	}
 
 	CLayoutRange sSelectOld_Layout;
@@ -818,6 +1167,57 @@ void CViewCommander::Command_SORT(BOOL bAsc)	//bAsc:TRUE=昇順,FALSE=降順
 		);
 	}
 	m_pCommanderView->RedrawAll();
+}
+
+
+
+void CViewCommander::Command_SORT_EX_DIALOG(void)
+{
+	CDlgSortEx cDlg;
+	if( cDlg.DoModal(G_AppInstance(), m_pCommanderView->GetHwnd(), NULL) ){
+		int nOpt = 0;
+		if( cDlg.m_bOrderAsc ){
+			nOpt |= ESORT_EX_ASC;
+		}
+		bool bIgnoreOpt = true;
+		if( cDlg.m_eMode == CDlgSortEx::ESortExMode_API1 ){
+			nOpt |= ESORT_EX_MODE_API1;
+		}else if( cDlg.m_eMode == CDlgSortEx::ESortExMode_API2 ){
+			nOpt |= ESORT_EX_MODE_API2;
+		}else if( cDlg.m_eMode == CDlgSortEx::ESortExMode_API3 ){
+			nOpt |= ESORT_EX_MODE_API3;
+			bIgnoreOpt = false;
+		}else if( cDlg.m_eMode == CDlgSortEx::ESortExMode_Dec ){
+			nOpt |= ESORT_EX_MODE_DEC;
+			bIgnoreOpt = false;
+		}else if( cDlg.m_eMode == CDlgSortEx::ESortExMode_Hex ){
+			nOpt |= ESORT_EX_MODE_HEX;
+			bIgnoreOpt = false;
+		}
+		if( bIgnoreOpt ){
+			if( cDlg.m_bCaseIgnore ){
+				nOpt |= ESORT_EX_CASE;
+			}
+			if( cDlg.m_bHiraKataIgnore ){
+				nOpt |= ESORT_EX_KANA;
+			}
+			if( cDlg.m_bWidthIgnore ){
+				nOpt |= ESORT_EX_WIDTH;
+			}
+			if( cDlg.m_bSpaceIgnore ){
+				nOpt |= ESORT_EX_SPACE;
+			}
+			if( cDlg.m_eMode == CDlgSortEx::ESortExMode_API1 ){
+				if( cDlg.m_bStringSort ){
+					nOpt |= ESORT_EX_STRING;
+				}
+				if( cDlg.m_bNumSort ){
+					nOpt |= ESORT_EX_NUM;
+				}
+			}
+		}
+		HandleCommand(F_SORT_EX, true, nOpt, 0, 0, 0);
+	}
 }
 
 

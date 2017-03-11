@@ -118,6 +118,8 @@ MacroFuncInfo CSMacroMgr::m_MacroFuncInfoCommandArr[] =
 	{F_RTRIM,				LTEXT("RTrim"),					{VT_EMPTY, VT_EMPTY, VT_EMPTY, VT_EMPTY},	VT_EMPTY,	NULL}, //右(末尾)の空白を削除 2001.12.03 hor
 	{F_SORT_ASC,			LTEXT("SortAsc"),				{VT_EMPTY, VT_EMPTY, VT_EMPTY, VT_EMPTY},	VT_EMPTY,	NULL}, //選択行の昇順ソート 2001.12.06 hor
 	{F_SORT_DESC,			LTEXT("SortDesc"),				{VT_EMPTY, VT_EMPTY, VT_EMPTY, VT_EMPTY},	VT_EMPTY,	NULL}, //選択行の降順ソート 2001.12.06 hor
+	{F_SORT_EX,				LTEXT("SortEx"),				{VT_I4,    VT_EMPTY, VT_EMPTY, VT_EMPTY},	VT_EMPTY,	NULL}, //ソート詳細
+	{F_SORT_EX_DIALOG,			LTEXT("SortExDialog"),		{VT_EMPTY, VT_EMPTY, VT_EMPTY, VT_EMPTY},	VT_EMPTY,	NULL}, //ソート詳細(ダイアログ)
 	{F_MERGE,				LTEXT("Merge"),					{VT_EMPTY, VT_EMPTY, VT_EMPTY, VT_EMPTY},	VT_EMPTY,	NULL}, //選択行のマージ 2001.12.06 hor
 
 	/* カーソル移動系 */
@@ -997,6 +999,7 @@ BOOL CSMacroMgr::CanFuncIsKeyMacro( int nFuncID )
 	case F_RTRIM					:// 2001.12.03 hor
 	case F_SORT_ASC					:// 2001.12.06 hor
 	case F_SORT_DESC				:// 2001.12.06 hor
+	case F_SORT_EX					://ソート詳細
 	case F_MERGE					:// 2001.12.06 hor
 
 	/* カーソル移動系 */

@@ -148,6 +148,17 @@ public:
 		return ( 6 <= m_cOsVersionInfo.dwMajorVersion );
 	}
 
+	/*! Windows 7ˆÈã‚©’²‚×‚é
+
+		@retval true Windows 7 or later
+
+	*/
+	bool _IsWin7_or_later()
+	{
+		return (m_cOsVersionInfo.dwMajorVersion >= 7 ||
+			(m_cOsVersionInfo.dwMajorVersion == 6 && m_cOsVersionInfo.dwMinorVersion >= 1));
+	}
+
 	/*! Windows XPˆÈã‚©’²‚×‚é
 
 		@retval true Windows XP or later
@@ -248,6 +259,14 @@ inline bool IsWinVista_or_later() {
 	return true;
 #else
 	return COsVersionInfo()._IsWinVista_or_later();
+#endif
+}
+
+inline bool IsWin7_or_later() {
+#if (WINVER >= _WIN32_WINNT_WIN7)
+	return true;
+#else
+	return COsVersionInfo()._IsWin7_or_later();
 #endif
 }
 

@@ -33,5 +33,10 @@ public:
 	bool DoConvert(CNativeW* pcData);
 };
 
+class CConvert_ZenhiraToZenkata : public CConvert{
+public:
+	bool DoConvert(CNativeW* pcData);
+};
+
 #endif /* SAKURA_CCONVERT_TOZENKATA_F23E454A_B7B2_4655_910D_EF97F0A98E6A_H_ */
 /*[EOF]*/

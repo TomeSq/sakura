@@ -131,6 +131,7 @@
 #define HLP000211	211 //右(末尾)の空白を削除
 #define HLP000212	212 //選択行の昇順ソート
 #define HLP000213	213 //選択行の降順ソート
+#define HLP000376	376 //ソート詳細
 #define HLP000214	214 //選択行のマージ
 #define HLP000285	285 //入力改行コード指定
 #define HLP000131	131 //「変換(C)」メニューの一覧
@@ -1281,5 +1282,24 @@
 #define HIDC_BUTTON_DELCOLORALL				15020
 #define HIDC_BUTTON_LOADMARKER				15021
 #define HIDC_BUTTON_SAVEMARKER				15022
+
+//ソート詳細
+#define HIDOK_SORTEX						15100
+#define HIDCANCEL_SORTEX					15101
+#define HIDC_SORTEX_BUTTON_HELP				15102
+#define HIDC_RADIO_ASC						15103
+#define HIDC_RADIO_DESC						15104
+#define HIDC_RADIO_STRING					15105
+#define HIDC_RADIO_API1						15106
+#define HIDC_RADIO_API2						15107
+#define HIDC_RADIO_API3						15108
+#define HIDC_RADIO_DECVALUE					15109
+#define HIDC_RADIO_HEXVALUE					15110
+#define HIDC_CHECK_CASE						15111
+#define HIDC_CHECK_HIRAKATA					15112
+#define HIDC_CHECK_WIDTH					15113
+#define HIDC_CHECK_SPACE					15114
+#define HIDC_CHECK_STRING					15115
+#define HIDC_CHECK_NUM						15116
 
 #define HIDC_STATIC								19999 //不明

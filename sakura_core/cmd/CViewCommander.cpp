@@ -318,6 +318,8 @@ BOOL CViewCommander::HandleCommand(
 	case F_RTRIM:					Command_TRIM(FALSE);break;			// 2001.12.03 hor
 	case F_SORT_ASC:				Command_SORT(TRUE);break;			// 2001.12.06 hor
 	case F_SORT_DESC:				Command_SORT(FALSE);break;			// 2001.12.06 hor
+	case F_SORT_EX:					Command_SORT_EX((int)lparam1);break;
+	case F_SORT_EX_DIALOG:			Command_SORT_EX_DIALOG();break;
 	case F_MERGE:					Command_MERGE();break;				// 2001.12.06 hor
 	case F_RECONVERT:				Command_Reconvert();break;			/* ÉÅÉjÉÖÅ[Ç©ÇÁÇÃçƒïœä∑ëŒâû minfu 2002.04.09 */ 
 

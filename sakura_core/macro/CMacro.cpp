@@ -797,6 +797,7 @@ bool CMacro::HandleCommand(
 	case F_TAB_NO_CLOSE:
 	case F_TAB_ICON:
 	case F_SETCOLORMARKER:
+	case F_SORT_EX:
 		return FALSE != pcEditView->GetCommander().HandleCommand( Index, true, (Argument[0] != NULL ? _wtoi(Argument[0]) : 0 ), 0, 0, 0 );
 	case F_UP_BOX:
 	case F_DOWN_BOX:

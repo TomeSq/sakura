@@ -28,3 +28,22 @@ bool CConvert_ToZenkata::DoConvert(CNativeW* pcData)
 
 	return true;
 }
+
+
+bool CConvert_ZenhiraToZenkata::DoConvert(CNativeW* pcData)
+{
+	int nBufLen = pcData->GetStringLength();
+	wchar_t* pBuf = new wchar_t[nBufLen+1];
+	wmemcpy(pBuf, pcData->GetStringPtr(), nBufLen + 1);
+
+	//全角ひら→全角カナ
+	Convert_ZenhiraToZenkata(pBuf, nBufLen);
+
+	//設定
+	pcData->SetString(pBuf, nBufLen);
+
+	//バッファ解放
+	delete[] pBuf;
+
+	return true;
+}

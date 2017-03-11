@@ -174,6 +174,7 @@ dlg/CDlgProfileMgr.o \
 dlg/CDlgProperty.o \
 dlg/CDlgReplace.o \
 dlg/CDlgSetCharSet.o \
+dlg/CDlgSortEx.o \
 dlg/CDlgTagJumpList.o \
 dlg/CDlgTagsMake.o \
 dlg/CDlgWindowList.o \

@@ -161,6 +161,8 @@ public:
 //	void Command_WORDSREFERENCE( void );	/* 単語リファレンス */
 	void Command_TRIM(BOOL);				// 2001.12.03 hor
 	void Command_SORT(BOOL);				// 2001.12.06 hor
+	void Command_SORT_EX(int nOpt);
+	void Command_SORT_EX_DIALOG();
 	void Command_MERGE(void);				// 2001.12.06 hor
 	void Command_Reconvert(void);			/* メニューからの再変換対応 minfu 2002.04.09 */
 	void Command_CtrlCode_Dialog( EFunctionFlags flags );		/* コントロールコードの入力(ダイアログ) */	//@@@ 2002.06.02 MIK

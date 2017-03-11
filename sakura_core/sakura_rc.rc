@@ -2532,6 +2532,49 @@ BEGIN
     PUSHBUTTON      "ヘルプ(&H)",IDC_BUTTON_HELP,316,86,58,14
 END
 
+IDD_SORTEX DIALOG 0, 0, 191, 239
+STYLE DS_MODALFRAME | DS_CENTER | DS_CONTEXTHELP | WS_POPUP | WS_CAPTION |
+    WS_SYSMENU
+EXSTYLE WS_EX_CONTEXTHELP
+CAPTION "ソート詳細"
+FONT 9, "ＭＳ Ｐゴシック"
+BEGIN
+    GROUPBOX        "並び順",IDC_STATIC,5,3,115,42
+    CONTROL         "昇順[A-Z/0-9] (&A)",IDC_RADIO_ASC,"Button",
+                    BS_AUTORADIOBUTTON | WS_GROUP,13,15,90,8
+    CONTROL         "降順[Z-A/9-0] (&Z)",IDC_RADIO_DESC,"Button",
+                    BS_AUTORADIOBUTTON | WS_TABSTOP,13,30,90,8
+    GROUPBOX        "モード",IDC_STATIC,5,48,115,90
+    CONTROL         "文字列(&S)",IDC_RADIO_STRING,"Button",
+                    BS_AUTORADIOBUTTON | WS_GROUP,13,61,90,8
+    CONTROL         "CompareStringW(&M)",IDC_RADIO_API1,"Button",
+                    BS_AUTORADIOBUTTON | WS_TABSTOP,13,73,90,8
+    CONTROL         "CompareStringOrdinal(&P)",IDC_RADIO_API2,"Button",
+                    BS_AUTORADIOBUTTON | WS_TABSTOP,13,85,90,8
+    CONTROL         "ファイル名順(&F)",IDC_RADIO_API3,"Button",
+                    BS_AUTORADIOBUTTON | WS_TABSTOP,13,97,90,8
+    CONTROL         "数値(&N)",IDC_RADIO_DECVALUE,"Button",
+                    BS_AUTORADIOBUTTON | WS_TABSTOP,13,109,90,8
+    CONTROL         "十六進数(&H)",IDC_RADIO_HEXVALUE,"Button",
+                    BS_AUTORADIOBUTTON | WS_TABSTOP,13,121,90,8
+    GROUPBOX        "同一視など",IDC_STATIC,5,141,115,91
+    CONTROL         "英大文字小文字(&C)",IDC_CHECK_CASE,"Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP,13,154,90,8
+    CONTROL         "ひらがなカタカナ(&K)",IDC_CHECK_HIRAKATA,"Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP,13,166,90,8
+    CONTROL         "全角半角(&W)",IDC_CHECK_WIDTH,"Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP,13,178,90,8
+    CONTROL         "空白を無視(&P)",IDC_CHECK_SPACE,"Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP,13,190,90,8
+    CONTROL         "文字列ソート(&T)",IDC_CHECK_STRING,"Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP,13,202,90,8
+    CONTROL         "数値ソート(&U)",IDC_CHECK_NUM,"Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP,13,214,90,8
+    DEFPUSHBUTTON   "&OK",IDOK,128,144,53,14
+    PUSHBUTTON      "キャンセル(&X)",IDCANCEL,128,168,53,14
+    PUSHBUTTON      "ヘルプ(&H)",IDC_BUTTON_HELP,128,191,53,14
+END
+
 /////////////////////////////////////////////////////////////////////////////
 //
 // DESIGNINFO
@@ -3161,6 +3204,8 @@ BEGIN
     F_RTRIM                 "右(末尾)の空白を削除"
     F_SORT_ASC              "選択行の昇順ソート"
     F_SORT_DESC             "選択行の降順ソート"
+    F_SORT_EX_DIALOG        "ソート詳細..."
+    F_SORT_EX               "ソート詳細"
     F_MERGE                 "連続した重複行の削除(uniq)"
     F_RECONVERT             "再変換"
 END

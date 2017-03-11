@@ -2040,7 +2040,7 @@ void CShareData_IO::ShareData_IO_MainMenu( CDataProfile& cProfile )
 	const WCHAR*	pszSecName = LTEXT("MainMenu");
 	int& nVersion = GetDllShareData().m_Common.m_sMainMenu.m_nVersion;
 	// ※メニュー定義を追加したらnCurrentVerを修正
-	const int nCurrentVer = 3;
+	const int nCurrentVer = 4;
 	nVersion = nCurrentVer;
 	if( cProfile.IOProfileData(pszSecName, LTEXT("nMainMenuVer"), nVersion) ){
 	}else{
@@ -2093,6 +2093,7 @@ void CShareData_IO::ShareData_IO_MainMenu( CDataProfile& cProfile )
 			{3, F_COLORMARKER_NEXT, F_DLGCOLORMARKER,   L'N', false, false, false, 1, 0}, 	// 次のカラーマーカー
 			{3, F_COLORMARKER_PREV, F_COLORMARKER_NEXT, L'P', false, false, false, 1, 0}, 	// 前のカラーマーカー
 			{3, F_COLORMARKER_VIEW, F_COLORMARKER_VIEW, L'L', false, false, false, 1, 0}, 	// カラーマーカー一覧
+			{4, F_SORT_EX_DIALOG, F_SORT_DESC, L'S', false, false, false, 1, 0}, 	// ソート詳細(ダイアログ)
 		};
 		for( int i = 0; i < _countof(addInfos); i++ ){
 			SMainMenuAddItemInfo& item = addInfos[i];

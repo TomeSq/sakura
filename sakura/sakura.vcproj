@@ -2862,6 +2862,14 @@
 					>
 				</File>
 				<File
+					RelativePath="..\sakura_core\dlg\CDlgSortEx.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\sakura_core\dlg\CDlgSortEx.h"
+					>
+				</File>
+				<File
 					RelativePath="..\sakura_core\dlg\CDlgTagJumpList.cpp"
 					>
 				</File>
