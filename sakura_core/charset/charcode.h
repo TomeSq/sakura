@@ -219,14 +219,16 @@ namespace WCODE
 	inline bool IsHiragana(wchar_t c)
 	{
 		// 2009.06.26 syat 「ゝゞ」を追加
-		return (c>=0x3041 && c<=0x3096) || (c>=0x309D && c<=0x309E);
+		// 2017.02.26 Moca 「合字より」U+309Fを追加
+		return (c>=0x3041 && c<=0x3096) || (c>=0x309D && c<=0x309F);
 	}
 
 	//! カタカナかどうか
 	inline bool IsZenkakuKatakana(wchar_t c)
 	{
 		// 2009.06.26 syat 「ヽヾ」を追加
-		return (c>=0x30A1 && c<=0x30FA) || (c>=0x30FD && c<=0x30FE);
+		// 2017.02.26 Moca カタカナ拡張U+31F0-U+31FF/合字コトU+30FF 追加
+		return (c>=0x30A1 && c<=0x30FA) || (c>=0x30FD && c<=0x30FF) ||(c>=0x31f0 && c<=0x31ff);
 	}
 
 	//! ギリシャ文字かどうか

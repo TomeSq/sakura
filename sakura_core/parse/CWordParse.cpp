@@ -140,8 +140,36 @@ ECharKind CWordParse::WhatKindOfChar(
 
 		//その他
 		if( IsZenkakuSpace(c)    )return CK_ZEN_SPACE;	// 全角スペース
-		if( c==L'ー'             )return CK_ZEN_NOBASU;	// 伸ばす記号 'ー'
-		if( c==L'゛' || c==L'゜' )return CK_ZEN_DAKU;	// 全角濁点 「゛゜」
+		// 2017.02.26 伸ばし・濁点処理変更。かならず前の文字と同じになるように前処理をする
+		struct SHirakataGousei{
+			static bool IsMatch(wchar_t c){
+				return (c == 0x30FC    // 伸ばす記号 'ー'
+				  || c == 0x309B || c == 0x309C   // 全角濁点 「゛゜」
+				  || c == 0x3099 || c == 0x309A); // 合成用濁点
+			}
+		};
+		if(SHirakataGousei::IsMatch(c)){
+			nIdx--; // 前の文字を探す
+			while( 0 <= nIdx ){
+				if(SHirakataGousei::IsMatch(pData[nIdx])){
+					// あーーー
+					// イーーー
+					// あ゛゛゛゛
+					// あ゛ーに対応→継続
+				}else if(IsHiragana(pData[nIdx])){
+					return CK_HIRA;
+				}else if(IsZenkakuKatakana(pData[nIdx])){
+					return CK_ZEN_KATA;
+				}else{
+					break;
+				}
+				nIdx--;
+			}
+			if(c == L'ー'){
+				return CK_ZEN_NOBASU;
+			}
+			return CK_ZEN_DAKU;
+		}
 		if( isCSymbolZen(c)      )return CK_ZEN_CSYM;	// 全角版、識別子に使用可能な文字 
 		if( IsZenkakuKigou(c)    )return CK_ZEN_KIGO;	// 全角の記号
 		if( IsHiragana(c)        )return CK_HIRA;		// ひらがな
@@ -159,7 +187,29 @@ ECharKind CWordParse::WhatKindOfChar(
 		if (IsUTF16High(pData[nIdx]) && IsUTF16Low(pData[nIdx+1])) {
 			int		nCode = 0x10000 + ((pData[nIdx] & 0x3FF)<<10) + (pData[nIdx+1] & 0x3FF);	// コードポイント
 			if (nCode >= 0x20000 && nCode <= 0x2FFFF) {	// CJKV 拡張予約域 Ext-B/Ext-C...
+				if(0x2A708 == nCode){
+					// カナ合字とも
+					return CK_ZEN_KATA;
+				}
 				return CK_ZEN_ETC;				// 全角のその他(漢字など)
+			}
+			if( nCode >= 0x1B000 && nCode <= 0x1B0FF ){
+				// Kana Supplement 仮名補助集合
+				int kanaIndex = nCode - 0x1B000;
+				char kanaSupplement[] = {2, 1};
+				if(kanaIndex < sizeof(kanaSupplement)){
+					switch(kanaSupplement[kanaIndex]){
+					case 0:
+						return CK_ETC;
+					case 1:
+						return CK_HIRA;
+					case 2:
+						return CK_ZEN_KATA;
+					default:
+						break;
+					}
+				}
+				return CK_ZEN_KATA; // 未実装文字はカタカナということにする
 			}
 		}
 		return CK_ETC;	// 半角のその他
@@ -176,14 +226,7 @@ ECharKind CWordParse::WhatKindOfTwoChars( ECharKind kindPre, ECharKind kindCur )
 {
 	if( kindPre == kindCur )return kindCur;			// 同種ならその種別を返す
 
-	// 全角長音・全角濁点は前後の全角ひらがな・全角カタカナに引きずられる
-	if( ( kindPre == CK_ZEN_NOBASU || kindPre == CK_ZEN_DAKU ) &&
-		( kindCur == CK_ZEN_KATA   || kindCur == CK_HIRA     ) )return kindCur;
-	if( ( kindCur == CK_ZEN_NOBASU || kindCur == CK_ZEN_DAKU ) &&
-		( kindPre == CK_ZEN_KATA   || kindPre == CK_HIRA     ) )return kindPre;
-	// 全角濁点、全角長音の連続は、とりあえず同種の文字とみなす
-	if( ( kindPre == CK_ZEN_NOBASU || kindPre == CK_ZEN_DAKU ) &&
-		( kindCur == CK_ZEN_NOBASU || kindCur == CK_ZEN_DAKU ) )return kindCur;
+	// 2017.02.26 伸ばし記号と濁点の処理はWhatKindOfCharの段階で判定し「前」の文字のみ見るように
 
 	if( kindPre == CK_LATIN )kindPre = CK_CSYM;		// ラテン系文字はアルファベットとみなす
 	if( kindCur == CK_LATIN )kindCur = CK_CSYM;
@@ -203,14 +246,7 @@ ECharKind CWordParse::WhatKindOfTwoChars4KW( ECharKind kindPre, ECharKind kindCu
 {
 	if( kindPre == kindCur )return kindCur;			// 同種ならその種別を返す
 
-	// 全角長音・全角濁点は前後の全角ひらがな・全角カタカナに引きずられる
-	if( ( kindPre == CK_ZEN_NOBASU || kindPre == CK_ZEN_DAKU ) &&
-		( kindCur == CK_ZEN_KATA   || kindCur == CK_HIRA     ) )return kindCur;
-	if( ( kindCur == CK_ZEN_NOBASU || kindCur == CK_ZEN_DAKU ) &&
-		( kindPre == CK_ZEN_KATA   || kindPre == CK_HIRA     ) )return kindPre;
-	// 全角濁点、全角長音の連続は、とりあえず同種の文字とみなす
-	if( ( kindPre == CK_ZEN_NOBASU || kindPre == CK_ZEN_DAKU ) &&
-		( kindCur == CK_ZEN_NOBASU || kindCur == CK_ZEN_DAKU ) )return kindCur;
+	// 2017.02.26 伸ばし記号と濁点の処理はWhatKindOfCharの段階で判定し「前」の文字のみ見るように
 
 	if( kindPre == CK_LATIN )kindPre = CK_CSYM;		// ラテン系文字はアルファベットとみなす
 	if( kindCur == CK_LATIN )kindCur = CK_CSYM;
