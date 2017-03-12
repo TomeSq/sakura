@@ -716,7 +716,7 @@ BOOL CTabWnd::SeparateGroup( HWND hwndSrc, HWND hwndDst, POINT ptDrag, POINT ptD
 			}
 		}
 
-		SetCarmWindowPlacement( hwndSrc, &wp );
+		SetCarmWindowPlacement( hwndSrc, &wp, NULL );
 	}
 	else
 	{	// 既存グループのウィンドウ処理
@@ -731,7 +731,7 @@ BOOL CTabWnd::SeparateGroup( HWND hwndSrc, HWND hwndDst, POINT ptDrag, POINT ptD
 			::GetWindowPlacement( hwndDst, &wp );
 			if( wp.showCmd == SW_SHOWMINIMIZED )
 				wp.showCmd = showCmdRestore;
-			SetCarmWindowPlacement( hwndSrc, &wp );
+			SetCarmWindowPlacement( hwndSrc, &wp, hwndDst );
 			::ShowWindow( hwndDst, SW_HIDE );	// 移動先の以前の先頭ウィンドウを消す
 		}
 	}
@@ -2146,8 +2146,47 @@ void CTabWnd::AdjustWindowPlacement( void )
 			if( wp.showCmd == SW_SHOWMINIMIZED )
 				wp.showCmd = pEditNode->m_showCmdRestore;
 			::SetWindowPos( hwnd, hwndInsertAfter, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE );
-			SetCarmWindowPlacement( hwnd, &wp );	// 位置を復元する
+			SetCarmWindowPlacement( hwnd, &wp, hwndInsertAfter );	// 位置を復元する
 			::UpdateWindow( hwnd );	// 強制描画
+		}
+	}
+}
+
+/*!< AeroSnap込みのウィンドウ位置を取得する */
+// 参考 http://oldworldgarage.web.fc2.com/programing/tip0006_RestoreWindow.html
+void CTabWnd::GetRealWindowPlacement(HWND hwnd, RECT* pRect)
+{
+	::GetWindowRect(hwnd, pRect);
+
+	// GetWindowPlacementの座標と合わせるため、タスクバーが左、上にある場合を補正する
+
+	// ウィンドウのあるモニタ
+	MONITORINFO mInfo;
+	HMONITOR hMonWnd = MonitorFromRect(pRect, MONITOR_DEFAULTTONEAREST);
+	mInfo.cbSize = sizeof(MONITORINFO);
+	GetMonitorInfo(hMonWnd, &mInfo);
+
+	//タスクバーのあるモニタ
+	APPBARDATA ad;
+	ad.cbSize = sizeof(APPBARDATA);
+	ad.hWnd = NULL;
+	SHAppBarMessage(ABM_GETTASKBARPOS, &ad);
+	HMONITOR hMonTask = MonitorFromRect(&(ad.rc), MONITOR_DEFAULTTONEAREST);
+
+	// ウィンドウとタスクバーが同じモニタにある、かつ、タスクバーが常に表示の場合
+	if (hMonWnd == hMonTask && (HWND)SHAppBarMessage(ABM_GETAUTOHIDEBAR, &ad) == NULL) {
+		LONG diff;
+		switch (ad.uEdge) {
+		case ABE_TOP:
+			diff = ad.rc.bottom - ad.rc.top;
+			pRect->top -= diff;
+			pRect->bottom -= diff;
+			break;
+		case ABE_LEFT:
+			diff = ad.rc.right - ad.rc.left;
+			pRect->left -= diff;
+			pRect->right -= diff;
+			break;
 		}
 	}
 }
@@ -2157,7 +2196,7 @@ void CTabWnd::AdjustWindowPlacement( void )
 	@author ryoji
 	@date 2007.11.30 新規作成
 */
-int CTabWnd::SetCarmWindowPlacement( HWND hwnd, const WINDOWPLACEMENT* pWndpl )
+int CTabWnd::SetCarmWindowPlacement( HWND hwnd, const WINDOWPLACEMENT* pWndpl, HWND hwndDst )
 {
 	WINDOWPLACEMENT wp = *pWndpl;
 	if( wp.showCmd == SW_SHOWMAXIMIZED && ::IsZoomed( hwnd ) )
@@ -2182,6 +2221,16 @@ int CTabWnd::SetCarmWindowPlacement( HWND hwnd, const WINDOWPLACEMENT* pWndpl )
 	else if( wp.showCmd != SW_SHOWMAXIMIZED )
 	{
 		wp.showCmd = SW_SHOWNOACTIVATE;
+
+		// AeroSnap込みのウィンドウ位置に補正する
+		if (hwndDst != NULL) {
+			RECT rc;
+			GetRealWindowPlacement(hwndDst, &rc);
+			wp.rcNormalPosition.left = rc.left;
+			wp.rcNormalPosition.right = rc.right;
+			wp.rcNormalPosition.top = rc.top;
+			wp.rcNormalPosition.bottom = rc.bottom;
+		}
 	}
 	::SetWindowPlacement( hwnd, &wp );
 	return wp.showCmd;
