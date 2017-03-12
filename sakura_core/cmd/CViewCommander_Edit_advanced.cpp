@@ -322,9 +322,13 @@ void CViewCommander::Command_INDENT( const wchar_t* const pData, const CLogicInt
 		GetSelect().SetFrom(rcSel.GetFrom());	//範囲選択開始位置
 		GetSelect().SetTo(rcSel.GetTo());		//範囲選択終了位置
 		m_pCommanderView->GetSelectionInfo().SetBoxSelect(true);
+		m_pCommanderView->SetDrawSwitch(bDrawSwitchOld);
+		m_pCommanderView->RedrawAll();
 	}
 	else if( GetSelect().IsLineOne() ){	// 通常選択(1行内)
 		if( INDENT_NONE != eIndent && !bSoftTab ){
+			// 2016.10.31 プラグインインデントがあるとミニマップの表示がfalseになってしまうので、ここで表示にする
+			m_pCommanderView->SetDrawSwitch(bDrawSwitchOld);
 			// ※矩形選択ではないので Command_WCHAR から呼び戻しされるようなことはない
 			Command_WCHAR( pData[0] );	// 1文字入力
 		}
@@ -340,6 +344,8 @@ void CViewCommander::Command_INDENT( const wchar_t* const pData, const CLogicInt
 			);
 			GetCaret().MoveCursor( ptInserted, true );
 			GetCaret().m_nCaretPosX_Prev = GetCaret().GetCaretLayoutPos().GetX2();
+			m_pCommanderView->SetDrawSwitch(bDrawSwitchOld);
+			m_pCommanderView->RedrawAll();
 		}
 	}
 	else{	// 通常選択(複数行)
@@ -415,10 +421,9 @@ void CViewCommander::Command_INDENT( const wchar_t* const pData, const CLogicInt
 			);
 		}
 		// To Here 2001.12.03 hor
+		m_pCommanderView->SetDrawSwitch(bDrawSwitchOld);
+		m_pCommanderView->RedrawAll();
 	}
-	/* 再描画 */
-	m_pCommanderView->SetDrawSwitch(bDrawSwitchOld);	// 2002.01.25 hor
-	m_pCommanderView->RedrawAll();			// 2002.01.25 hor	// 2009.07.25 ryoji Redraw()->RedrawAll()
 	return;
 }
 
