@@ -17,15 +17,39 @@ CRuler::~CRuler()
 {
 }
 
+static void PenWidths(int& width, int& height, CLayoutXInt xDefault, int bottom, bool isBold){
+	width = ((Int)xDefault + 9) / 10;
+	height = bottom / 10;
+	if(width < height){
+		height = width;
+	}
+	if(isBold){
+		// 太字のときは倍の幅
+		width *= 2;
+		height *= 2;
+	}
+	width = t_max(1, width);
+	height = t_max(1, height);
+}
+
 //2007.08.26 kobake UNICODE用にX位置を変更
 void CRuler::_DrawRulerCaret( CGraphics& gr, int nCaretDrawPosX, int nCaretWidth )
 {
+	CTypeSupport cRulerType(m_pEditView,COLORIDX_RULER);
+	int nPenWidth = 1;
+	int nPenHeight = 1;
+	int bottom = m_pEditView->GetTextArea().GetAreaTop() - m_pEditView->GetTextArea().GetTopYohaku();
+	PenWidths(nPenWidth, nPenHeight,
+		m_pEditView->GetTextMetrics().GetLayoutXDefault(),
+		bottom,
+		cRulerType.IsBoldFont());
+
 	//描画領域 -> hRgn
 	RECT rc;
-	rc.left = nCaretDrawPosX + 1;	// 2012.07.27 Moca 1px右に修正
-	rc.right = rc.left + m_pEditView->GetTextMetrics().GetHankakuDx() - 1;
+	rc.left = nCaretDrawPosX + nPenWidth;	// 2012.07.27 Moca 1px右に修正
+	rc.right = rc.left + m_pEditView->GetTextMetrics().GetHankakuDx() - nPenWidth;
 	rc.top = 0;
-	rc.bottom = m_pEditView->GetTextArea().GetAreaTop() - m_pEditView->GetTextArea().GetTopYohaku() - 1;
+	rc.bottom = bottom - nPenHeight;
 	HRGN hRgn = ::CreateRectRgnIndirect( &rc );
 
 	//ブラシ作成 -> hBrush
@@ -92,7 +116,7 @@ void CRuler::DrawRulerBg(CGraphics& gr)
 	HFONT		hFontOld;
 	memset_raw( &lf, 0, sizeof(lf) );
 	lf.lfHeight			= 1 - pCommon->m_sWindow.m_nRulerHeight;	//	2002/05/13 ai
-	lf.lfWidth			= 5;
+	lf.lfWidth			= 0; // 2017.03.09 5→0
 	lf.lfEscapement		= 0;
 	lf.lfOrientation	= 0;
 	lf.lfWeight			= 400;
@@ -117,6 +141,15 @@ void CRuler::DrawRulerBg(CGraphics& gr)
 	rc.bottom = m_pEditView->GetTextArea().GetAreaTop() - m_pEditView->GetTextArea().GetTopYohaku();
 	cRulerType.FillBack(gr,rc);
 
+	// 2017.03.09 ルーラーの線の太さ
+	int nPenWidth = 1;
+	int nPenHeight = 1;
+	int bottom = m_pEditView->GetTextArea().GetAreaTop() - m_pEditView->GetTextArea().GetTopYohaku();
+	PenWidths(nPenWidth, nPenHeight,
+		m_pEditView->GetTextMetrics().GetLayoutXDefault(),
+		bottom,
+		cRulerType.IsBoldFont());
+
 	//ルーラー色設定
 	gr.PushPen(cRulerType.GetTextColor(),0);
 	gr.PushTextForeColor(cRulerType.GetTextColor());
@@ -136,9 +169,20 @@ void CRuler::DrawRulerBg(CGraphics& gr)
 	if( nToX > m_pEditView->GetTextArea().GetAreaRight() ){
 		nToX = m_pEditView->GetTextArea().GetAreaRight();
 	}
-	::MoveToEx( gr, m_pEditView->GetTextArea().GetAreaLeft(), nY + 1, NULL );
-	::LineTo( gr, nToX, nY + 1 );
+	for(int k = 0; k < nPenHeight; k++){
+		int n = nY + 1 - k;
+		::MoveToEx( gr, m_pEditView->GetTextArea().GetAreaLeft(), n, NULL );
+		::LineTo( gr, nToX, n );
+	}
 
+	struct SPrivateDrawer{
+		static void DrawLine(CGraphics& gr, int x, int beginY, int toY, int penWidth){
+			for(int k = 0; k < penWidth; k++){
+				::MoveToEx( gr, x + k, beginY, NULL );
+				::LineTo( gr, x + k, toY );
+			}
+		};
+	};
 
 	//目盛を描画
 	const int oneColumn = (Int)m_pEditView->GetTextMetrics().GetLayoutXDefault();
@@ -147,6 +191,7 @@ void CRuler::DrawRulerBg(CGraphics& gr)
 	const int dx = m_pEditView->GetTextMetrics().GetHankakuDx(); // PPでもDx
 	// 先頭がかけている場合は次の桁に進む
 	const int pxOffset = (Int)i % oneColumn;
+	const int nThird = (nY + 2) / 3;
 	if( pxOffset ){
 		nX += oneColumn - pxOffset;
 		i += CLayoutXInt(oneColumn - pxOffset); // CLayoutXInt == pixel
@@ -156,26 +201,22 @@ void CRuler::DrawRulerBg(CGraphics& gr)
 	{
 		//ルーラー終端の区切り(大)
 		if( keta == nMaxLineKetas ){
-			::MoveToEx( gr, nX, nY, NULL );
-			::LineTo( gr, nX, 0 );
+			SPrivateDrawer::DrawLine(gr, nX, nY, 0, nPenWidth);
 		}
 		//10目盛おきの区切り(大)と数字
 		else if( 0 == keta % 10 ){
 			wchar_t szColumn[32];
-			::MoveToEx( gr, nX, nY, NULL );
-			::LineTo( gr, nX, 0 );
+			SPrivateDrawer::DrawLine(gr, nX, nY, 0, nPenWidth);
 			_itow( ((Int)keta) / 10, szColumn, 10 );
 			::TextOutW_AnyBuild( gr, nX + 2 + 0, -1 + 0, szColumn, wcslen( szColumn ) );
 		}
 		//5目盛おきの区切り(中)
 		else if( 0 == keta % 5 ){
-			::MoveToEx( gr, nX, nY, NULL );
-			::LineTo( gr, nX, nY - 6 );
+			SPrivateDrawer::DrawLine(gr, nX, nY, nY - (nThird *2), nPenWidth);
 		}
 		//毎目盛の区切り(小)
 		else{
-			::MoveToEx( gr, nX, nY, NULL );
-			::LineTo( gr, nX, nY - 3 );
+			SPrivateDrawer::DrawLine(gr, nX, nY, nY - nThird, nPenWidth);
 		}
 
 		nX += dx;

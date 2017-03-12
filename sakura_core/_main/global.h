@@ -110,7 +110,7 @@ extern const SColorAttributeData g_ColorAttributeArr[];
 /*!< 設定値の上限・下限 */
 //	ルーラの高さ
 const int IDC_SPIN_nRulerHeight_MIN = 2;
-const int IDC_SPIN_nRulerHeight_MAX = 32;
+const int IDC_SPIN_nRulerHeight_MAX = 64;
 
 /**	マウスクリックとキー定義の対応
 
