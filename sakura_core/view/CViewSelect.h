@@ -105,7 +105,7 @@ private:
 		CLayoutInt			nLineNum,	//!< [in] 描画対象行(レイアウト行)
 		const CLayoutRange&	sRange		//!< [in] 選択範囲(レイアウト単位)
 	) const;
-	int GetByteRangeConvertCode(const CLayoutRange& sRange) const;
+	INT_PTR GetByteRangeConvertCode(const CLayoutRange& sRange) const;
 public:
 	void GetSelectAreaLineFromRange(CLayoutRange& ret, CLayoutInt nLineNum, const CLayout* pcLayout, const CLayoutRange& sRange) const;
 	void GetSelectAreaLine(CLayoutRange& ret, CLayoutInt nLineNum, const CLayout* pcLayout) const{
