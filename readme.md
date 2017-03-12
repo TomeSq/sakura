@@ -1,119 +1,119 @@
-#�T�N���G�f�B�^ ���p��
-�@���̃T�N���G�f�B�^�́A�e��p�b�`��K�p���ĐV�@�\�̊J���E�e�X�g�̂��ߖ{�Ɣł���fork�������̂ł��B
-�܂��A�l��Git�̃e�X�g�^�p�����˂Ă��܂��B  
-�@tags/branchs/trunk��trunk2�ȊO�̓~���[���Ă��܂���B
+﻿#サクラエディタ 私用版
+　このサクラエディタは、各種パッチを適用して新機能の開発・テストのため本家版からforkしたものです。
+また、個人のGitのテスト運用を兼ねています。  
+　tags/branchs/trunk等trunk2以外はミラーしていません。
 
-## �{��
-�@http://sakura-editor.sourceforge.net/
+## 本家
+　http://sakura-editor.sourceforge.net/
 
-##�o�C�i���̓���
-x86�� release tag�̃y�[�W����ǂ���  
+##バイナリの入手
+x86版 release tagのページからどうぞ  
 https://github.com/mocaskr/sakura/releases/tag/v025.20170312-r4176  
 
-chm�Ńw���v�� release tag�̃y�[�W�ɂ���܂�  
+chm版ヘルプは release tagのページにあります  
 https://github.com/mocaskr/sakura_help/releases/tag/v012  
-v003����w���v�̎Q�Ɛ��ύX���܂���  
+v003からヘルプの参照先を変更しました  
 http://mocaskr.web.fc2.com/sakurahelp2/HLP000001.html  
-�w���v�̃\�[�X�E�ύX�����͈ȉ��ɂ���܂�  
+ヘルプのソース・変更履歴は以下にあります  
 https://github.com/mocaskr/sakura_help  
 
-##����
-��r�I�͂�ĂȂ��p�b�`���������Ă��邽�߁A�o�O�ɒ��ӂ��Ă��������B  
-�{�Ƃł��Č�����o�O�͖{�Ƃ̂ق��ւ��肢���܂��B  
-���p�ŌŗL�̖��́Aissues�����p���Ă��������Bfork/pull request�����}���܂��B
-��{�I�ɂ́A��xpush��������rebase���܂���B�{��trunk2��HEAD���\�Ȍ���ǂ�������\��ł��B
-�}�[�W����ȏꍇ�Ȃǂ�trunk2����D�悵�K�p�ς݃p�b�`���폜����\��������܂��B
+##注意
+比較的枯れてないパッチも混ざっているため、バグに注意してください。  
+本家でも再現するバグは本家のほうへお願いします。  
+私用版固有の問題は、issuesを活用してください。fork/pull requestも歓迎します。
+基本的には、一度pushした物はrebaseしません。本家trunk2のHEADを可能な限り追いかける予定です。
+マージ困難な場合などでtrunk2側を優先し適用済みパッチを削除する可能性もあります。
 
-## �ύX���e
+## 変更内容
 sakura 2.3.1.0 mocaskr_ver 025.20170312-r4176  
-base�o�[�W��������̕ύX�_�ꗗ  
+baseバージョンからの変更点一覧  
 New/Imp/Chg
-* �J���[�}�[�J�[
-* �^�u����Ȃ��A�^�u�̃A�C�R����
-* CSV/TSV���̃v���|�[�V���i���Ή�
-* ���ʐݒ�̃c���[�\��
-* �}�E�X�W�F�X�`���[
-* �^�C�v�ʐݒ�̒ǉ��Ƌ����L�[���[�h�̊O����
-* �t�H���g�X�^�C���ɎΑ�(��)�Ǝ���������ǉ�
-* Grep�t�@�C�����Ő��K�\���t�B���^�[
-* �_�C�A���O�̃t�H���g�ύX�ݒ�ǉ�
-* �s�ԍ���10�s���̋����\��
-* �����L�[���[�h��20�Ɋg��
-* �_�u���N���b�N(URL�I��)�ɃR�}���h���蓖��
-* �v���O�C�����}�N���L�^�ł���悤�ɂ��铙�}�N���ύX
-* �}�N���̕ۑ��p�����[�^�̎擾�}�N���ǉ�
-* �R�����g�̃l�X�g
-* DIFF�����̑���t�@�C���̕����R�[�h�w��
-* �J�X�^�����j���[�E�c�[���o�[�E�L�[�o�C���h�̏������{�^��
-* �S�ݒ胊�Z�b�g�@�\�ǉ�
-* �_�C���N�g�^�O�W�����v�ł̋N�_�t�H���_�ύX�@�\
-* Grep(�u��)�Ńt�@�C���������t�@�C���I���_�C�A���O����ݒ�ł���悤��
-* ini�̗����𕪗����ċL������I�v�V����
-* �傫���c�[���o�[�A�C�R���Ή�
-* �J�[�\���ʒu���̃}�E�X�X�N���[��
-* �㉺�X�N���[����EOF����ԏ�ɕ\���I�v�V����
-* �t�@�C���ǂݍ��݂ŃX���b�h���g��
-* �}�N���̕�����R�s�[�����炷
-* CProfile�̓ǂݍ��݂̍�����
-* CIfObj::GetIDsOfNames�̔�r��map�Ɏg���č�����
-* �J���[�̕������C++11��ǉ�,C/C++��C/C++03�ɕύX��Raw���������Ȃ�
-* �^�C�v�ʂ̃G�N�X�|�[�g�œ��͕⊮�v���O�C����Id�����g���悤��
-* ���͕⊮�v���O�C���𕡐���`�\��
-* �}�N���t�H���_�̃f�t�H���g��ini�t�H���_���瑊�΃p�X�ɕύX
-* �F��HTML�R�s�[�̏o��HTML�̈ꕔ�ȗ�
-* �w�i�F���
-* �I�𕶎����ɉ��s�R�[�h�����܂߂�I�v�V����
-* Web�w���v��cgi�����Ȃ�Ȃ�/URL�ύX/URL�ݒ�ǉ�
-* ExpandParameter("$\<patchinfo\>")�̒ǉ�
-* �v���Z�X�Ԃ�SendMessage�̂����ꕔ��Timeout�ɕύX
+* カラーマーカー
+* タブを閉じない、タブのアイコン化
+* CSV/TSV幅のプロポーショナル対応
+* 共通設定のツリー表示
+* マウスジェスチャー
+* タイプ別設定の追加と強調キーワードの外部化
+* フォントスタイルに斜体(仮)と取り消し線を追加
+* Grepファイル名で正規表現フィルター
+* ダイアログのフォント変更設定追加
+* 行番号の10行毎の強調表示
+* 強調キーワードを20個に拡張
+* ダブルクリック(URL選択)にコマンド割り当て
+* プラグインをマクロ記録できるようにする等マクロ変更
+* マクロの保存パラメータの取得マクロ追加
+* コメントのネスト
+* DIFF差分の相手ファイルの文字コード指定
+* カスタムメニュー・ツールバー・キーバインドの初期化ボタン
+* 全設定リセット機能追加
+* ダイレクトタグジャンプでの起点フォルダ変更機能
+* Grep(置換)でファイル部分もファイル選択ダイアログから設定できるように
+* iniの履歴を分離して記憶するオプション
+* 大きいツールバーアイコン対応
+* カーソル位置下のマウススクロール
+* 上下スクロールでEOFを一番上に表示オプション
+* ファイル読み込みでスレッドを使う
+* マクロの文字列コピーを減らす
+* CProfileの読み込みの高速化
+* CIfObj::GetIDsOfNamesの比較をmapに使って高速化
+* カラーの文字列にC++11を追加,C/C++はC/C++03に変更しRawを処理しない
+* タイプ別のエクスポートで入力補完プラグインのId名を使うように
+* 入力補完プラグインを複数定義可能に
+* マクロフォルダのデフォルトをiniフォルダから相対パスに変更
+* 色つきHTMLコピーの出力HTMLの一部省略
+* 背景色印刷
+* 選択文字数に改行コード分を含めるオプション
+* Webヘルプでcgiをつかなわない/URL変更/URL設定追加
+* ExpandParameter("$\<patchinfo\>")の追加
+* プロセス間のSendMessageのうち一部をTimeoutに変更
 
 Fix
-* ���[���[�̍��𑜓x�Ή�
-* �C���f���g�R�}���h�o�R�ŃC���f���g�v���O�C�������삷��ƃ~�j�}�b�v�̍ĕ`�悪off�ɂȂ�
-* �^�u�؂�ւ�����AeroSnap�Ή�(by syat)
-* ����v���r���[���̊e��s��C��(�^�C�v�ʕύX�A����ԍ��ύX)
-* ���j���[�����ǉ��ŃA�N�Z�X�L�[���ǉ�����Ȃ�
-* �����Ԋu�� 1�ȏ�̒l��ݒ肷��Ɖ��s�����܂������Ȃ��Ȃ�
-* ��`�I���{���ׂĒu���̕s��C��
-* �֑����������삵�Ȃ��o�O�̏C��
-* VB�A�E�g���C����obj.Type��Type�ƌ딻�肷��
-* �R�}���h�ꗗ�̕��я����ꕔ���΂Ȃ̂𒼂�
+* ルーラーの高解像度対応
+* インデントコマンド経由でインデントプラグインが動作するとミニマップの再描画がoffになる
+* タブ切り替え時のAeroSnap対応(by syat)
+* 印刷プレビュー中の各種不具合修正(タイプ別変更、印刷番号変更)
+* メニュー自動追加でアクセスキーが追加されない
+* 文字間隔に 1以上の値を設定すると改行がうまく扱えなくなる
+* 矩形選択＋すべて置換の不具合修正
+* 禁則処理が動作しないバグの修正
+* VBアウトラインでobj.TypeをTypeと誤判定する
+* コマンド一覧の並び順が一部反対なのを直す
 
-�x�[�X�o�[�W��������x�[�X���r�W�����̊Ԃ�trunk2���ł̏C���_  
+ベースバージョンからベースリビジョンの間のtrunk2側での修正点  
 2.3.1.0 r4126 - r4176
 
 New/Chg/Imp
-* �E�B���h�E�ꗗ�_�C�A���O
-* �L�[���[�h�w���v���j���[�̃I�v�V����
-* �}�N���ۑ���S_��ǉ����Ȃ�
-* Grep�t�@�C���E�t�H���_����512�Ɋg��
-* �A�E�g���C�����j���[�ɂ��ׂēW�J�E�k���E�u�b�N�}�[�N�폜�E�S�폜��ǉ�
-* �A�E�g���C����̓c���[�\���̍�����
-* �A�E�g���C���̃c���[�̋t���\�[�g�ǉ�
+* ウィンドウ一覧ダイアログ
+* キーワードヘルプメニューのオプション
+* マクロ保存でS_を追加しない
+* Grepファイル・フォルダ長を512に拡張
+* アウトラインメニューにすべて展開・縮小・ブックマーク削除・全削除を追加
+* アウトライン解析ツリー表示の高速化
+* アウトラインのツリーの逆順ソート追加
 
 Fix/Keep
 
-* �~�j�}�b�v�Ƀh���b�v����Ɨ�����
-* static�ϐ��폜
-* ���K�\���L�[���[�h�ŗ����邱�Ƃ�����
-* DragFinish������Ȃ�
-* �^�C�v�ʂ��狤�ʐݒ�L�[���[�h��\������Ɠ��e����v���Ȃ�
-* UTF-7�����F��������������
-* �^�u�����t�H���g�T�C�Y���傫����4�Œ�ɂȂ�
-* �ݒ��ʂ̃t�@�C���I���_�C�A���O�ő��΃p�X�ɂł���Ƃ��͂���
-* CUxTheme�̕ێ�C���p�b�`
-* Win10�Ŗ���̃^�u�A�C�R����Grep�ɂȂ�
-* �A�E�g���C�����KR�΍�ȍ~��ANSI�r���h�G���[���o��
-* maxdata��`�ǉ�
-* �ҏW���t�@�C������Grep�̂Ƃ��T�u�t�H���_���ʐݒ���㏑�����Ȃ�
-* new/delete����wstring�ɒu������
-* maxdata��`�ǉ�
-* typo�C��(Doxygen�R�����g)
-* IO_Profile�̃R�}���hID�v���O�C�����������܂Ƃ߂�
-* �L�[�{�[�h��CP���`�F�b�N����ƃL�[�{�[�h�ő���ł��Ȃ��Ȃ�
-* Grep�_�C�A���O������ؑւŃE�B���h�E�T�C�Y���ς��Ȃ�
-* �A�E�g���C�����C++/Java�̃\�[�g�������������o�O�̏C��
-* typo�C��(Doxygen�R�����g)
-* C++�A�E�g���C���ł�K&R������`�΍�
+* ミニマップにドロップすると落ちる
+* static変数削除
+* 正規表現キーワードで落ちることがある
+* DragFinishがたりない
+* タイプ別から共通設定キーワードを表示すると内容が一致しない
+* UTF-7自動認識を厳しくする
+* タブ幅がフォントサイズが大きいと4固定になる
+* 設定画面のファイル選択ダイアログで相対パスにできるときはする
+* CUxThemeの保守修正パッチ
+* Win10で無題のタブアイコンがGrepになる
+* アウトライン解析KR対策以降でANSIビルドエラーが出る
+* maxdata定義追加
+* 編集中ファイルからGrepのときサブフォルダ共通設定を上書きしない
+* new/deleteからwstringに置き換え
+* maxdata定義追加
+* typo修正(Doxygenコメント)
+* IO_ProfileのコマンドIDプラグイン名処理をまとめる
+* キーボードでCPをチェックするとキーボードで操作できなくなる
+* Grepダイアログが言語切替でウィンドウサイズが変わらない
+* アウトライン解析C++/Javaのソート順がおかしいバグの修正
+* typo修正(Doxygenコメント)
+* C++アウトラインでのK&R引数定義対策
 
-�ȏ�
+以上
